@@ -22,8 +22,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -52,12 +52,14 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Register a new user", description = "Receives a Base64 password and decodes it for DB storage.")
     public ResponseEntity<?> register(@Valid @RequestBody UserRequest request) {
-        String checkSql = "SELECT COUNT(*) FROM users WHERE id = ? OR login = ?";
-        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, request.getId(), request.getLogin());
+        String generatedId = UUID.randomUUID().toString();
+
+        String checkSql = "SELECT COUNT(*) FROM users WHERE login = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, request.getLogin());
 
         if (count != null && count > 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "User with same ID or Login already exists."));
+                    .body(Map.of("error", "User with same Login already exists."));
         }
 
         try {
@@ -65,10 +67,10 @@ public class UserController {
             String plainPassword = new String(decodedBytes);
 
             String insertSql = "INSERT INTO users (id, name, login, password, active) VALUES (?, ?, ?, ?, 1)";
-            jdbcTemplate.update(insertSql, request.getId(), request.getName(), request.getLogin(), plainPassword);
+            jdbcTemplate.update(insertSql, generatedId, request.getName(), request.getLogin(), plainPassword);
 
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "User registered successfully", "id", request.getId()));
+                    .body(Map.of("message", "User registered successfully", "id", generatedId));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()

@@ -7,13 +7,17 @@ import jalau.cis.api.service.DeleteUserService;
 import jalau.cis.api.service.ReadUsersService;
 import jalau.cis.api.service.UpdateUserService;
 import jalau.cis.api.service.UserService;
+import jalau.cis.api.config.SecurityConfig;
+import jalau.cis.api.util.JwtUtil;
 import jalau.cis.api.util.TestDataFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -26,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 class UserControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -36,12 +41,13 @@ class UserControllerTest {
     @MockBean private DeleteUserService deleteUserService;
     @MockBean private UserService userService;
     @MockBean private UpdateUserService updateUserService;
+    @MockBean private JwtUtil jwtUtil;
 
     // ------------------------------------------------------------------ POST
 
     @Test
     void register_success_returns201() throws Exception {
-        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(), any())).thenReturn(0);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any())).thenReturn(0);
         when(jdbcTemplate.update(anyString(), any(), any(), any(), any())).thenReturn(1);
 
         mockMvc.perform(post("/users")
@@ -49,25 +55,25 @@ class UserControllerTest {
                         .content(registerJson()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("User registered successfully"))
-                .andExpect(jsonPath("$.id").value(USER_ID));
+                .andExpect(jsonPath("$.id").exists());
     }
 
     @Test
     void register_duplicateUser_returns409() throws Exception {
-        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(), any())).thenReturn(1);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any())).thenReturn(1);
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("User with same ID or Login already exists."));
+                .andExpect(jsonPath("$.error").value("User with same Login already exists."));
     }
 
     @Test
     void register_invalidBase64Password_returns400() throws Exception {
-        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(), any())).thenReturn(0);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any())).thenReturn(0);
 
-        String body = "{\"id\":\"id1\",\"name\":\"Name\",\"login\":\"login1\",\"password\":\"!!not-base64!!\"}";
+        String body = "{\"name\":\"Name\",\"login\":\"login1\",\"password\":\"!!not-base64!!\"}";
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -109,6 +115,7 @@ class UserControllerTest {
     // ------------------------------------------------------------------ GET by ID
 
     @Test
+    @WithMockUser
     void getUserById_found_returns200() throws Exception {
         when(readUsersService.read(USER_ID)).thenReturn(aUser());
 
@@ -119,6 +126,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser
     void getUserById_notFound_returns404() throws Exception {
         when(readUsersService.read("unknown")).thenReturn(null);
 
@@ -129,6 +137,7 @@ class UserControllerTest {
     // ------------------------------------------------------------------ GET by login
 
     @Test
+    @WithMockUser
     void getUserByLogin_found_returns200() throws Exception {
         when(userService.findByLogin(USER_LOGIN)).thenReturn(aUserResponse());
 
@@ -140,6 +149,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser
     void getUserByLogin_notFound_returns404() throws Exception {
         when(userService.findByLogin("ghost")).thenReturn(null);
 
@@ -150,6 +160,7 @@ class UserControllerTest {
     // ------------------------------------------------------------------ PUT
 
     @Test
+    @WithMockUser
     void updateUser_found_returns200() throws Exception {
         User updated = aUser();
         updated.setName("Updated Name");
@@ -163,6 +174,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser
     void updateUser_notFound_returns404() throws Exception {
         when(updateUserService.update(eq("unknown"), any(UserDto.class))).thenReturn(null);
 
@@ -175,6 +187,7 @@ class UserControllerTest {
     // ------------------------------------------------------------------ DELETE
 
     @Test
+    @WithMockUser
     void deleteUser_found_returns200() throws Exception {
         when(deleteUserService.delete(USER_ID)).thenReturn(true);
 
@@ -184,6 +197,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser
     void deleteUser_notFound_returns404() throws Exception {
         when(deleteUserService.delete("unknown")).thenReturn(false);
 
