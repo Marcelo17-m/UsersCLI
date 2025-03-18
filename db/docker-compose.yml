@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest
+    container_name: sd3db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: sd5
+      MYSQL_DATABASE: sd3
+    ports:
+      - "3307:3306"
+    volumes:
+      # Esto ejecuta el script SQL automáticamente al iniciar
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
