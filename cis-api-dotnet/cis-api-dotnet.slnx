@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="cis-api-dotnet.csproj" />
+  <Project Path="cis-api-dotnet.Tests/cis-api-dotnet.Tests.csproj" />
+</Solution>

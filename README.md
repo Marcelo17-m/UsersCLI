@@ -1,0 +1,215 @@
+# Introduction
+
+
+# Requirements
+
+This app works with **MySQL**. For simplicity, we recommend using **Docker Compose**:
+
+```bash
+docker-compose -f db/docker-compose.yml up -d
+```
+
+# DB Schema
+
+The schema is split into individual scripts under `db/`, executed automatically by Docker Compose in order:
+
+| Script | Table | Used by |
+|---|---|---|
+| `01_init.sql` | `users` | CLI, Java API |
+| `02_topics.sql` | `topics` | .NET CIS API |
+| `03_ideas.sql` | `ideas` | .NET CIS API |
+| `04_votes.sql` | `votes` | .NET CIS API |
+
+# DB Configuration File (For CLI)
+You will need a configuration file to connect (example `sd3.xml`):
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.cj.jdbc.Driver" />
+				<property name="url" value="jdbc:mysql://localhost:3307/sd3" />
+				<property name="username" value="SOME_USER" />
+				<property name="password" value="SOME_PASSWORD" />
+			</dataSource>
+		</environment>
+	</environments>
+</configuration>
+```
+
+# CLI Usage
+
+Just compile and run this program:
+
+```bash
+Users CLI
+
+Usage: users -config=<configuration> [COMMAND]
+CRUD on a Users DB
+      -config=<configuration>
+         Configuration File (xml)
+Commands:
+  -read    Read Users
+  -delete  Delete a User by ID
+  -create  Create a new user
+  -update  Update an existing user
+```
+
+These are common parameters:
+
+_In this examples, sd3.xml is a file that follows the **Db Configuration File**_
+
+### CLI Examples:
+
+* Read users:
+
+```
+-config=sd3.xml -read
+```
+
+* Create user
+```
+-config=sd3.xml -create -n javier -l jroca -p pass123
+```
+
+* Delete existing user (id = aab5d5fd-70c1-11e5-a4fb-b026b977eb28 )
+```
+-config=sd3.xml -delete aab5d5fd-70c1-11e5-a4fb-b026b977eb28
+```
+
+* Update existing user (id = 3bf71036-e7ef-4890-b79b-91496c14160f)
+```
+-config=sd3.xml -update -i 3bf71036-e7ef-4890-b79b-91496c14160f -n javier2 -l jroca2 -p pwd321
+```
+
+
+
+# CIS API Java (cis-api)
+
+A Spring Boot 3 REST API that manages users with JWT authentication.
+
+## Build and Run
+```bash
+cd cis-api/
+mvn clean spring-boot:run
+```
+
+## Endpoints (Base Path: `/api/v1`)
+
+| Method   | URL                        | Description |
+|----------|----------------------------|-------------|
+| `GET`    | `/health`                  | API & Database health check |
+| `POST`   | `/auth/login`              | **Login** – returns a JWT token |
+| `POST`   | `/users`                   | **Create user** – receives a Base64 password, stored as plain text |
+| `GET`    | `/users`                   | **List all users** |
+| `GET`    | `/users/{id}`              | **Get user by ID** |
+| `GET`    | `/users/login/{login}`     | **Get user by login** (response excludes password) |
+| `PUT`    | `/users/{id}`              | **Update user** – `name`, `login`, and/or `password` (Base64); partial updates supported |
+| `DELETE` | `/users/{id}`              | **Soft delete** – sets `active = false` |
+| `GET`    | `/swagger-ui.html`         | Swagger UI interactive documentation |
+
+### Request body for `POST /users`
+
+```json
+{
+  "name": "Full Name",
+  "login": "username",
+  "password": "BASE64_ENCODED_PASSWORD"
+}
+```
+
+> The `id` is auto-generated (UUID). For `PUT`, all fields are optional (partial update).
+
+### Response codes
+
+| Code | Meaning |
+|------|---------|
+| `200` | OK |
+| `201` | User created successfully |
+| `400` | Bad request (e.g. invalid Base64 password) |
+| `404` | User not found |
+| `409` | Conflict – user with same `login` already exists |
+| `500` | Internal server error |
+
+## Compatibility Note
+The API receives the password in **Base64** to avoid plain-text transmission over HTTP. The API **decodes** it before storing in the database to maintain 100% compatibility with the **CLI Legacy**, which reads and writes plain text passwords.
+
+---
+
+# CIS API .NET (cis-api-dotnet)
+
+An ASP.NET Core 10 Web API following Clean Architecture to manage Topics, Ideas, and Votes.
+
+## Build and Run
+```bash
+cd cis-api-dotnet/
+dotnet build
+dotnet run
+```
+
+## Endpoints
+
+Default port: `http://localhost:5281`
+
+| Method | URL              | Description                     |
+|--------|------------------|---------------------------------|
+| `GET`  | `/api/v1/health` | API & Database health check     |
+| `GET`  | `/swagger`       | Swagger UI interactive documentation |
+
+## Configuration
+The database connection is configured in `cis-api-dotnet/appsettings.json`. It targets the same shared MySQL database used by the CLI and the Java API.
+
+---
+
+# Testing & Code Coverage
+
+## CIS API Java (cis-api)
+
+The project includes a robust suite of unit tests for controllers and services.
+
+### Run Tests
+```bash
+cd cis-api/
+mvn clean test
+```
+
+### Code Coverage (JaCoCo)
+After running the tests, the HTML report is generated at:
+`cis-api/target/site/jacoco/index.html`
+
+The project is configured to enforce a minimum of **80% line coverage** for the `jalau.cis.api` package. If the coverage falls below this threshold, the build will fail.
+
+## CIS API .NET (cis-api-dotnet)
+
+Unit tests for `HealthController` and `HealthService` using xUnit and Moq.
+
+### Run Tests
+```bash
+cd cis-api-dotnet/
+dotnet test
+```
+
+### Frameworks
+| Framework | Role |
+|---|---|
+| xUnit | Test runner |
+| Moq | Mocking service dependencies |
+| EF Core InMemory | In-memory DB for service tests |
+
+---
+
+# Log of Changes
+
+- **V2.3. March 2026**: Initial setup for CIS API (C# / .NET 10) with Clean Architecture and EF Core for Topics/Ideas/Votes.
+- **V2.2. March 2026**: Implemented Unit Tests (JUnit 5 + Mockito) and JaCoCo coverage (80% min).
+- **V2.1. March 2026**: Added full CRUD endpoints and complete API documentation. Added JWT authentication.
+- **V2.0. March 2026**: Added `cis-api` with Base64 decoding for legacy compatibility.
+- **V1.0. February 2023**: Initial Version J.ROCA (MasterClass Professor)
+
+_This project is property of Jala University. Do not distribute externally._

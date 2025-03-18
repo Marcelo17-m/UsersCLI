@@ -1,0 +1,75 @@
+stages:
+  - build
+  - test
+  - package
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository
+
+# LEGACY CLI
+
+build-cli:
+  stage: build
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - mvn clean compile
+  artifacts:
+    paths:
+      - target/
+    expire_in: 1 hour
+
+package-cli:
+  stage: package
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - mvn package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
+  only:
+    - main
+
+# CIS API JAVA
+
+build-cis-api:
+  stage: build
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - cd cis-api && mvn clean compile
+  artifacts:
+    paths:
+      - cis-api/target/
+    expire_in: 1 hour
+
+test-cis-api:
+  stage: test
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - cd cis-api && mvn test
+  dependencies:
+    - build-cis-api
+
+# CIS API DOTNET
+
+build-cis-api-dotnet:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:10.0-preview
+  script:
+    - cd cis-api-dotnet && dotnet build
+  artifacts:
+    paths:
+      - cis-api-dotnet/bin/
+    expire_in: 1 hour
+
+test-cis-api-dotnet:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0-preview
+  script:
+    - cd cis-api-dotnet && dotnet test
+  dependencies:
+    - build-cis-api-dotnet
