@@ -1,0 +1,19 @@
+# IntelliJ IDEA files
+.idea/
+*.iml
+out/
+
+# Maven output
+target/
+pom.xml~
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git specific files
+.git/
