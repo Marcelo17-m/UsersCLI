@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `name` VARCHAR(200) NOT NULL,
   `login` VARCHAR(20) NOT NULL,
   `password` VARCHAR(100) NOT NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE
 );
