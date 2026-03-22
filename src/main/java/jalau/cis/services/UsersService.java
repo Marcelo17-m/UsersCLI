@@ -9,4 +9,5 @@ public interface UsersService {
     List<User> getUsers()  throws Exception;
     void createUser(User user)  throws Exception;
     void updateUser(User user)  throws Exception;
+    User getUserByLogin(String login) throws Exception;
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 
 @Mapper
 public interface UserMapper {
+
     @Delete("DELETE FROM users WHERE id=#{userId}")
     int delete(String userId);
 
@@ -21,7 +22,11 @@ public interface UserMapper {
     @Insert("INSERT INTO users (id, name, login, password) VALUES (#{id}, #{name}, #{login}, #{password})")
     void createUser(User user);
 
-    @Insert("UPDATE users SET name=#{name}, login=#{login}, password=#{password} WHERE id=#{id}")
+    // CORRECCIÓN
+    @Update("UPDATE users SET name=#{name}, login=#{login}, password=#{password} WHERE id=#{id}")
     void updateUser(User user);
 
+    //NUEVO MÉTODO (DE FEATURE GET-USER-BY-LOGIN)
+    @Select("SELECT id, name, login, password FROM users WHERE login = #{login}")
+    User getUserByLogin(String login);
 }

@@ -16,7 +16,7 @@ public class MySqlDBService implements UsersService {
     private SqlSessionFactory factory;
 
     private interface SessionOperation<T> {
-        public T execute(SqlSession session, UserMapper mapper) throws Exception;
+        T execute(SqlSession session, UserMapper mapper) throws Exception;
     }
 
     public MySqlDBService(InputStream stream) {
@@ -30,27 +30,23 @@ public class MySqlDBService implements UsersService {
         System.out.println("Opening Session");
         try {
             return operation.execute(session, userMapper);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             System.out.printf("Error on SQL operation [%s]\n", ex.getMessage());
-            throw  ex;
-        }
-        finally {
+            throw ex;
+        } finally {
             System.out.println("Closing Session");
             session.close();
         }
     }
 
     @Override
-    public int deleteUser(String id) throws Exception{
+    public int deleteUser(String id) throws Exception {
         return execute((session, userMapper) -> {
             try {
                 int count = userMapper.delete(id);
                 session.commit();
                 return count;
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 session.rollback();
                 throw ex;
             }
@@ -59,36 +55,32 @@ public class MySqlDBService implements UsersService {
 
     @Override
     public List<User> getUsers() throws Exception {
-        return execute( (session, userMapper) -> {
-             var data  = userMapper.getAllUsers();
-             if (data != null) {
+        return execute((session, userMapper) -> {
+            var data = userMapper.getAllUsers();
+            if (data != null) {
                 return new ArrayList<>(data.values());
-              }
-                else
-                {
-                    return new ArrayList<>();
-                }
-            });
+            } else {
+                return new ArrayList<>();
+            }
+        });
     }
 
     @Override
-    public void createUser(User user) throws Exception{
+    public void createUser(User user) throws Exception {
         execute((session, userMapper) -> {
             try {
                 userMapper.createUser(user);
                 session.commit();
                 return 0;
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 session.rollback();
-                throw  ex;
+                throw ex;
             }
         });
-
     }
 
     @Override
-    public void updateUser(User user) throws Exception{
+    public void updateUser(User user) throws Exception {
         execute((session, userMapper) -> {
             try {
                 var userMap = userMapper.getUserById(user.getId());
@@ -97,15 +89,19 @@ public class MySqlDBService implements UsersService {
                     userMapper.updateUser(userToUpdate);
                     session.commit();
                     return 0;
-                }
-                else {
+                } else {
                     throw new Exception("User does not exist");
                 }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 session.rollback();
                 throw ex;
             }
         });
+    }
+
+    //FEATURE (GET BY LOGIN)
+    @Override
+    public User getUserByLogin(String login) throws Exception {
+        return execute((session, userMapper) -> userMapper.getUserByLogin(login));
     }
 }
