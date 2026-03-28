@@ -10,13 +10,9 @@ cache:
   paths:
     - .m2/repository
 
-before_script:
-  - echo "Iniciando pipeline..."
-  - java -version
-  - mvn -version
+# LEGACY CLI
 
-# BUILD
-build:
+build-cli:
   stage: build
   image: maven:3.9.6-eclipse-temurin-17
   script:
@@ -26,17 +22,7 @@ build:
       - target/
     expire_in: 1 hour
 
-# TESTS
-test:
-  stage: test
-  image: maven:3.9.6-eclipse-temurin-17
-  script:
-    - mvn test
-  dependencies:
-    - build
-
-# PACKAGE (JAR)
-package:
+package-cli:
   stage: package
   image: maven:3.9.6-eclipse-temurin-17
   script:
@@ -47,3 +33,43 @@ package:
     expire_in: 1 week
   only:
     - main
+
+# CIS API JAVA
+
+build-cis-api:
+  stage: build
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - cd cis-api && mvn clean compile
+  artifacts:
+    paths:
+      - cis-api/target/
+    expire_in: 1 hour
+
+test-cis-api:
+  stage: test
+  image: maven:3.9.6-eclipse-temurin-17
+  script:
+    - cd cis-api && mvn test
+  dependencies:
+    - build-cis-api
+
+# CIS API DOTNET
+
+build-cis-api-dotnet:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:10.0-preview
+  script:
+    - cd cis-api-dotnet && dotnet build
+  artifacts:
+    paths:
+      - cis-api-dotnet/bin/
+    expire_in: 1 hour
+
+test-cis-api-dotnet:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0-preview
+  script:
+    - cd cis-api-dotnet && dotnet test
+  dependencies:
+    - build-cis-api-dotnet

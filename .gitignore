@@ -17,3 +17,16 @@ Thumbs.db
 
 # Git specific files
 .git/
+
+# .NET / ASP.NET Core
+cis-api-dotnet/bin/
+cis-api-dotnet/obj/
+cis-api-dotnet/*.user
+cis-api-dotnet/runner/
+cis-api-dotnet/temp/
+cis-api-dotnet/*.log
+
+# .NET Test output
+cis-api-dotnet/cis-api-dotnet.Tests/bin/
+cis-api-dotnet/cis-api-dotnet.Tests/obj/
+cis-api-dotnet/cis-api-dotnet.Tests/TestResults/

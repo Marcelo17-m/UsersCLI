@@ -17,23 +17,19 @@ docker run -d --name sd3db -e MYSQL_ROOT_PASSWORD=sd5 -p 3314:3306 mysql
 
 # DB Schema
 
-We use the following DB Schema (MySQL, we use schema **sd3** for this example):
+The schema is split into individual scripts under `db/`, executed automatically by Docker Compose in order:
 
-```sql
-CREATE DATABASE IF NOT EXISTS sd3;
-USE sd3;
+| Script | Table | Used by |
+|---|---|---|
+| `01_init.sql` | `users` | CLI, Java API |
+| `02_topics.sql` | `topics` | .NET CIS API |
+| `03_ideas.sql` | `ideas` | .NET CIS API |
+| `04_votes.sql` | `votes` | .NET CIS API |
 
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` VARCHAR(36) NOT NULL,
-  `name` VARCHAR(200) NOT NULL,
-  `login` VARCHAR(20) NOT NULL,
-  `password` VARCHAR(100) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE
-);
+Start the database with:
+```bash
+docker-compose -f db/docker-compose.yml up -d
 ```
-
-This schema needs to be created once. Both CLI and API use this same table.
 
 # DB Configuration File (For CLI)
 You will need a configuration file to connect (example `sd3.xml`):
@@ -159,27 +155,72 @@ The `DELETE` endpoint performs a **physical delete** to match the legacy behavio
 
 # Testing & Code Coverage
 
+## CIS API Java (cis-api)
+
 The project includes a robust suite of unit tests for controllers and services.
 
-## Run Tests
+### Run Tests
 To execute all tests and generate the coverage report:
 ```bash
 cd cis-api/
 mvn clean test
 ```
 
-## Code Coverage (JaCoCo)
+### Code Coverage (JaCoCo)
 After running the tests, the HTML report is generated at:
 `cis-api/target/site/jacoco/index.html`
 
 The project is configured to enforce a minimum of **80% line coverage** for the `jalau.cis.api` package. If the coverage falls below this threshold, the build will fail.
 
+## CIS API .NET (cis-api-dotnet)
+
+Unit tests for `HealthController` and `HealthService` using xUnit and Moq.
+
+### Run Tests
+```bash
+cd cis-api-dotnet/
+dotnet test
+```
+
+### Frameworks
+| Framework | Role |
+|---|---|
+| xUnit | Test runner |
+| Moq | Mocking service dependencies |
+| EF Core InMemory | In-memory DB for service tests |
+
 ---
+
+---
+
+# CIS API (.NET Extension)
+
+An ASP.NET Core 10 Web API following Clean Architecture to manage Topics, Ideas, and Votes.
+
+## Build and Run
+```bash
+cd cis-api-dotnet/
+dotnet build
+dotnet run
+```
+
+## Endpoints
+
+Default port: `http://localhost:5281`
+
+| Method | URL              | Description                     |
+|--------|------------------|---------------------------------|
+| `GET`  | `/api/v1/health` | API & Database health check     |
+| `GET`  | `/swagger`       | Swagger UI interactive documentation |
+
+## Configuration
+The database connection is configured in `cis-api-dotnet/appsettings.json`. It targets the same shared MySQL database used by the CLI and the Java API.
 
 ---
 
 # Log of Changes 
 
+- **V2.3. March 2026**: Initial setup for CIS API (C# / .NET 10) with Clean Architecture and EF Core for Topics/Ideas/Votes.
 - **V2.2. March 2026**: Implemented Unit Tests (JUnit 5 + Mockito) and JaCoCo coverage (80% min).
 - **V2.1. March 2026**: Added full CRUD endpoints and complete API documentation. Removed `active` column for legacy compatibility.
 - **V2.0. March 2026**: Added `cis-api` with Base64 decoding for legacy compatibility.
