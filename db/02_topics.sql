@@ -1,0 +1,9 @@
+USE sd3;
+
+CREATE TABLE IF NOT EXISTS `topics` (
+  `Id` INT NOT NULL AUTO_INCREMENT,
+  `Title` VARCHAR(200) NOT NULL,
+  `Description` TEXT NOT NULL,
+  `UserId` VARCHAR(36) NOT NULL,
+  PRIMARY KEY (`Id`)
+);

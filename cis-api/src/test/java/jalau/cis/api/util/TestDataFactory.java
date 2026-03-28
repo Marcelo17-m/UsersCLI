@@ -42,8 +42,8 @@ public final class TestDataFactory {
     /** JSON body for POST /users with a valid Base64 password. */
     public static String registerJson() {
         return String.format(
-                "{\"id\":\"%s\",\"name\":\"%s\",\"login\":\"%s\",\"password\":\"%s\"}",
-                USER_ID, USER_NAME, USER_LOGIN, USER_PASS_B64);
+                "{\"name\":\"%s\",\"login\":\"%s\",\"password\":\"%s\"}",
+                USER_NAME, USER_LOGIN, USER_PASS_B64);
     }
 
     /** JSON body for PUT /users/{id}. */

@@ -9,10 +9,13 @@ services:
       MYSQL_ROOT_PASSWORD: sd5
       MYSQL_DATABASE: sd3
     ports:
-      - "3314:3306"
+      - "3307:3306"
     volumes:
-      # Esto ejecuta el script SQL automáticamente al iniciar
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # MySQL ejecuta estos scripts en orden alfabético al iniciar
+      - ./01_init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./02_topics.sql:/docker-entrypoint-initdb.d/02_topics.sql
+      - ./03_ideas.sql:/docker-entrypoint-initdb.d/03_ideas.sql
+      - ./04_votes.sql:/docker-entrypoint-initdb.d/04_votes.sql
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s

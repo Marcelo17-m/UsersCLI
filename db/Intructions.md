@@ -11,14 +11,24 @@ Este proyecto es una herramienta de línea de comandos (CLI) escrita en Java par
 
 ## 1. Configuración de la Base de Datos
 
-Levantaremos un contenedor de MySQL que ya incluye la creación automática de la tabla `users`.
+Levantaremos un contenedor de MySQL que incluye la creación automática de todas las tablas del proyecto.
 
 1. Abre una terminal en la raíz del proyecto.
 2. Ejecuta el siguiente comando:
    ```bash
    docker-compose -f db/docker-compose.yml up -d
+   ```
 
-*Esto creará la base de datos `sd3` en el puerto **3307** con la contraseña `sd5`.*
+*Esto creará la base de datos `sd3` en el puerto **3314** con la contraseña `sd5` y ejecutará los siguientes scripts en orden:*
+
+| Script | Tabla creada |
+|---|---|
+| `01_init.sql` | `users` |
+| `02_topics.sql` | `topics` |
+| `03_ideas.sql` | `ideas` |
+| `04_votes.sql` | `votes` |
+
+> Los scripts solo se ejecutan la primera vez (volumen vacío). Para forzar una re-inicialización: `docker-compose -f db/docker-compose.yml down -v && docker-compose -f db/docker-compose.yml up -d`
 
 ---
 

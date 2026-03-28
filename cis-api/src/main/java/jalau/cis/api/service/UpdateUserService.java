@@ -42,7 +42,7 @@ public class UpdateUserService {
                 byte[] decodedBytes = Base64.getDecoder().decode(dto.password());
                 user.setPassword(new String(decodedBytes));
             } catch (IllegalArgumentException e) {
-                user.setPassword(dto.password()); // fallback to plain if not base64
+                user.setPassword(dto.password());
             }
         }
 
