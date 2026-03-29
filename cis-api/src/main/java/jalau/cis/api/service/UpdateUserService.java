@@ -1,6 +1,6 @@
 package jalau.cis.api.service;
 
-import jalau.cis.api.dto.UserDto;
+import jalau.cis.api.dto.UserUpdateRequest;
 import jalau.cis.api.model.User;
 import jalau.cis.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +21,8 @@ public class UpdateUserService {
     private JdbcTemplate jdbcTemplate;
 
     @Transactional
-    public User update(String id, UserDto dto){
-        System.out.println("Updating user: " + id + " with data: " + dto);
+    public User update(String id, UserUpdateRequest request) {
+        System.out.println("Updating user: " + id + " with data: " + request);
         Optional<User> existing = userRepository.findById(id);
 
         if(existing.isEmpty()){
@@ -31,18 +31,18 @@ public class UpdateUserService {
 
         User user = existing.get();
 
-        if (dto.name() != null){
-            user.setName(dto.name());
+        if (request.name() != null){
+            user.setName(request.name());
         }
-        if (dto.login() != null){
-            user.setLogin(dto.login());
+        if (request.login() != null){
+            user.setLogin(request.login());
         }
-        if (dto.password() != null){
+        if (request.password() != null){
             try {
-                byte[] decodedBytes = Base64.getDecoder().decode(dto.password());
+                byte[] decodedBytes = Base64.getDecoder().decode(request.password());
                 user.setPassword(new String(decodedBytes));
             } catch (IllegalArgumentException e) {
-                user.setPassword(dto.password());
+                user.setPassword(request.password());
             }
         }
 

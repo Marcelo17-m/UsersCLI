@@ -1,6 +1,6 @@
 package jalau.cis.api.service;
 
-import jalau.cis.api.dto.UserDto;
+import jalau.cis.api.dto.UserUpdateRequest;
 import jalau.cis.api.model.User;
 import jalau.cis.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -22,22 +22,25 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UpdateUserServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private JdbcTemplate jdbcTemplate;
-    @InjectMocks private UpdateUserService updateUserService;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+    @InjectMocks
+    private UpdateUserService updateUserService;
 
     @Test
     void update_allFields_updatesSuccessfully() {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(jdbcTemplate.update(anyString(), any(), any(), any(), any())).thenReturn(1);
 
-        UserDto dto = new UserDto("New Name", "newlogin", USER_PASS_B64);
-        User result = updateUserService.update(USER_ID, dto);
+        UserUpdateRequest req = new UserUpdateRequest("New Name", "newlogin", USER_PASS_B64);
+        User result = updateUserService.update(USER_ID, req);
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("New Name");
         assertThat(result.getLogin()).isEqualTo("newlogin");
-        assertThat(result.getPassword()).isEqualTo(USER_PASS);   // decoded from Base64
+        assertThat(result.getPassword()).isEqualTo(USER_PASS);
     }
 
     @Test
@@ -45,8 +48,8 @@ class UpdateUserServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(jdbcTemplate.update(anyString(), any(), any(), any(), any())).thenReturn(1);
 
-        UserDto dto = new UserDto("Only Name", null, null);
-        User result = updateUserService.update(USER_ID, dto);
+        UserUpdateRequest req = new UserUpdateRequest("Only Name", null, null);
+        User result = updateUserService.update(USER_ID, req);
 
         assertThat(result.getName()).isEqualTo("Only Name");
         assertThat(result.getLogin()).isEqualTo(USER_LOGIN);
@@ -58,10 +61,9 @@ class UpdateUserServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(jdbcTemplate.update(anyString(), any(), any(), any(), any())).thenReturn(1);
 
-        UserDto dto = new UserDto(null, null, "not-valid-base64!!!");
-        User result = updateUserService.update(USER_ID, dto);
+        UserUpdateRequest req = new UserUpdateRequest(null, null, "not-valid-base64!!!");
+        User result = updateUserService.update(USER_ID, req);
 
-        // fallback: stores the raw value when Base64 decoding fails
         assertThat(result.getPassword()).isEqualTo("not-valid-base64!!!");
     }
 
@@ -69,7 +71,7 @@ class UpdateUserServiceTest {
     void update_userNotFound_returnsNull() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        User result = updateUserService.update("unknown", aUserDto());
+        User result = updateUserService.update("unknown", aUserUpdateRequest());
 
         assertThat(result).isNull();
     }

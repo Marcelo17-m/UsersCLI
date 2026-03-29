@@ -7,8 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jalau.cis.api.dto.UserDto;
-import jalau.cis.api.dto.UserRequest;
+import jalau.cis.api.dto.UserCreateRequest;
+import jalau.cis.api.dto.UserUpdateRequest;
 import jalau.cis.api.dto.UserResponse;
 import jalau.cis.api.model.User;
 import jalau.cis.api.service.DeleteUserService;
@@ -51,7 +51,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "Register a new user", description = "Receives a Base64 password and decodes it for DB storage.")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserCreateRequest request) {
         String generatedId = UUID.randomUUID().toString();
 
         String checkSql = "SELECT COUNT(*) FROM users WHERE login = ?";
@@ -103,8 +103,8 @@ public class UserController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a user")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserDto dto) {
-        User updated = updateUserService.update(id, dto);
+    public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody UserUpdateRequest request) {
+        User updated = updateUserService.update(id, request);
         if (updated == null) {
             return ResponseEntity.notFound().build();
         }
