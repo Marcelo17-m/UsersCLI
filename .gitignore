@@ -30,3 +30,7 @@ cis-api-dotnet/*.log
 cis-api-dotnet/cis-api-dotnet.Tests/bin/
 cis-api-dotnet/cis-api-dotnet.Tests/obj/
 cis-api-dotnet/cis-api-dotnet.Tests/TestResults/
+
+# Simulator build output
+simulator/bin/
+simulator/obj/

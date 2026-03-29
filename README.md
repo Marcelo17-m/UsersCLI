@@ -270,8 +270,96 @@ dotnet test
 
 ---
 
+# Traffic Simulator (simulator/)
+
+A config-driven C# console app that simulates concurrent users performing the full CIS flow: register → login → create topic → post ideas → vote → unvote. Used to validate performance, relational integrity, and the JWT interceptor behavior under load.
+
+> **Note:** The simulator has not been end-to-end tested yet because the Topics, Ideas, and Votes endpoints in the .NET CIS API are still pending implementation. It will run automatically once those endpoints are available. The Java Users API endpoints (`/users`, `/auth/login`) are already functional.
+
+## Run
+
+```bash
+cd simulator/
+dotnet run                       # uses config.json by default
+dotnet run -- path/to/config.json  # custom config file
+```
+
+## Configuration — `simulator/config.json`
+
+All simulation parameters and endpoint definitions live in `config.json`. No code changes are needed to adjust the simulation.
+
+### `simulation` section
+
+| Field | Description |
+|---|---|
+| `concurrentUsers` | Number of users simulated in parallel |
+| `ideasPerUser` | Ideas each user creates under their topic |
+| `votesPerUser` | How many of those ideas each user votes on |
+| `delayBetweenRequestsMs` | Pause between requests per user (ms) |
+
+### `apis` section
+
+```json
+"apis": {
+  "usersApi": "http://localhost:8081/api/v1",
+  "cisApi":   "http://localhost:5281/api/v1"
+}
+```
+
+Change these URLs to point to any environment (local, staging, CI).
+
+### `endpoints` section
+
+Each entry defines one HTTP call the simulator can make:
+
+```json
+"createTopic": {
+  "api":          "cisApi",
+  "method":       "POST",
+  "path":         "/topics",
+  "requiresAuth": true,
+  "body": {
+    "title":       { "type": "sentence", "prefix": "Topic" },
+    "description": { "type": "sentence", "prefix": "About" },
+    "userId":      { "type": "context",  "key": "userId" }
+  },
+  "expectId": "id"
+}
+```
+
+**Supported field types:**
+
+| Type | Generated value |
+|---|---|
+| `name` | Random display name (`SimUser_xxxxxxxx`) |
+| `username` | Random login handle (`sim_xxxxxxxx`) |
+| `base64password` | Base64-encoded random password |
+| `sentence` | Short phrase with optional `prefix` |
+| `uuid` | Random UUID v4 |
+| `context` | Value previously stored in the user session (e.g. `userId`, `topicId`, `token`) |
+
+To add or change an endpoint, edit `config.json` only — no code changes required.
+
+## Simulated flow per user
+
+```
+1. Register     →  POST /users          (Java Users API)
+2. Login        →  POST /auth/login     (Java Users API) → JWT
+3. Create Topic →  POST /topics         (CIS .NET API, JWT required)
+4. Create Ideas →  POST /ideas  × n     (CIS .NET API, JWT required)
+5. Cast Votes   →  POST /votes  × n     (CIS .NET API, JWT required)
+6. Unvote       →  DELETE /votes/{id}   (CIS .NET API, JWT required)
+```
+
+## Error reporting
+
+Any `401`, `403`, or `500` response is captured and printed in red at the end with full detail (step, status code, response body). The process exits with code `1` if any errors occurred, making it CI-friendly.
+
+---
+
 # Log of Changes
 
+- **V2.5. March 2026**: Added config-driven Traffic Simulator (`simulator/`) for concurrent load testing of the full CIS flow.
 - **V2.4. March 2026**: Implemented JWT Auth Interceptor in .NET API — delegated token validation to Java Users API (AUTH-401 / AUTH-403).
 - **V2.3. March 2026**: Initial setup for CIS API (C# / .NET 10) with Clean Architecture and EF Core for Topics/Ideas/Votes.
 - **V2.2. March 2026**: Implemented Unit Tests (JUnit 5 + Mockito) and JaCoCo coverage (80% min).
