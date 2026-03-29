@@ -18,7 +18,7 @@ public class UserService {
     }
 
     public UserResponse findByLogin(String login) {
-        String sql = "SELECT id, name, login FROM users WHERE login = ?";
+        String sql = "SELECT id, name, login, active FROM users WHERE login = ?";
         try {
             return jdbcTemplate.queryForObject(sql, userRowMapper(), login);
         } catch (EmptyResultDataAccessException e) {
@@ -30,7 +30,8 @@ public class UserService {
         return (rs, rowNum) -> new UserResponse(
                 rs.getString("id"),
                 rs.getString("name"),
-                rs.getString("login")
+                rs.getString("login"),
+                rs.getBoolean("active")
         );
     }
 }

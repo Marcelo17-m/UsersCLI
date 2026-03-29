@@ -122,7 +122,7 @@ class UserControllerTest {
 
     @Test
     void getUsers_returns200WithList() throws Exception {
-        when(readUsersService.readAll()).thenReturn(aUserList());
+        when(readUsersService.readAll()).thenReturn(aUserResponseList());
 
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
@@ -143,7 +143,7 @@ class UserControllerTest {
     @Test
     @WithMockUser
     void getUserById_found_returns200() throws Exception {
-        when(readUsersService.read(USER_ID)).thenReturn(aUser());
+        when(readUsersService.read(USER_ID)).thenReturn(aUserResponse());
 
         mockMvc.perform(get("/users/{id}", USER_ID))
                 .andExpect(status().isOk())

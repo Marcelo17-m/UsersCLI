@@ -1,5 +1,6 @@
 package jalau.cis.api.service;
 
+import jalau.cis.api.dto.UserResponse;
 import jalau.cis.api.model.User;
 import jalau.cis.api.repository.UserRepository;
 import jalau.cis.api.util.TestDataFactory;
@@ -27,7 +28,7 @@ class ReadUsersServiceTest {
     void readAll_returnsAllUsers() {
         when(userRepository.findAll()).thenReturn(aUserList());
 
-        List<User> result = readUsersService.readAll();
+        List<UserResponse> result = readUsersService.readAll();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(USER_ID);
@@ -37,7 +38,7 @@ class ReadUsersServiceTest {
     void readAll_emptyRepository_returnsEmptyList() {
         when(userRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<User> result = readUsersService.readAll();
+        List<UserResponse> result = readUsersService.readAll();
 
         assertThat(result).isEmpty();
     }
@@ -46,7 +47,7 @@ class ReadUsersServiceTest {
     void read_userExists_returnsUser() {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
 
-        User result = readUsersService.read(USER_ID);
+        UserResponse result = readUsersService.read(USER_ID);
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(USER_ID);
@@ -58,7 +59,7 @@ class ReadUsersServiceTest {
     void read_userNotFound_returnsNull() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        User result = readUsersService.read("unknown");
+        UserResponse result = readUsersService.read("unknown");
 
         assertThat(result).isNull();
     }

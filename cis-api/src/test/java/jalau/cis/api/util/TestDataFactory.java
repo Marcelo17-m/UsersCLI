@@ -28,7 +28,7 @@ public final class TestDataFactory {
     }
 
     public static UserResponse aUserResponse() {
-        return new UserResponse(USER_ID, USER_NAME, USER_LOGIN);
+        return new UserResponse(USER_ID, USER_NAME, USER_LOGIN, true);
     }
 
     public static UserUpdateRequest aUserUpdateRequest() {
@@ -37,6 +37,10 @@ public final class TestDataFactory {
 
     public static List<User> aUserList() {
         return List.of(aUser());
+    }
+
+    public static List<UserResponse> aUserResponseList() {
+        return List.of(aUserResponse());
     }
 
     public static String registerJson() {

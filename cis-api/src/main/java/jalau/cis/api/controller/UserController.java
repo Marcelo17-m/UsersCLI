@@ -108,7 +108,8 @@ public class UserController {
         if (updated == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(updated);
+        UserResponse response = new UserResponse(updated.getId(), updated.getName(), updated.getLogin(), updated.getActive());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -118,7 +119,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable String id) {
-        User user = readUserService.read(id);
+        UserResponse user = readUserService.read(id);
         if (user == null) {
             return ResponseEntity.notFound().build();
         }
