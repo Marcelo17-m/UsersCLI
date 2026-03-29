@@ -102,17 +102,19 @@ mvn clean spring-boot:run
 
 ## Endpoints (Base Path: `/api/v1`)
 
-| Method   | URL                        | Description |
-|----------|----------------------------|-------------|
-| `GET`    | `/health`                  | API & Database health check |
-| `POST`   | `/auth/login`              | **Login** – returns a JWT token |
-| `POST`   | `/users`                   | **Create user** – receives a Base64 password, stored as plain text |
-| `GET`    | `/users`                   | **List all users** |
-| `GET`    | `/users/{id}`              | **Get user by ID** |
-| `GET`    | `/users/login/{login}`     | **Get user by login** (response excludes password) |
-| `PUT`    | `/users/{id}`              | **Update user** – `name`, `login`, and/or `password` (Base64); partial updates supported |
-| `DELETE` | `/users/{id}`              | **Soft delete** – sets `active = false` |
-| `GET`    | `/swagger-ui.html`         | Swagger UI interactive documentation |
+| Method   | URL                        | Auth required | Description |
+|----------|----------------------------|:---:|-------------|
+| `GET`    | `/health`                  | No  | API & Database health check |
+| `POST`   | `/auth/login`              | No  | **Login** – returns a JWT token valid for this API and the .NET CIS API |
+| `POST`   | `/users`                   | No  | **Create user** – receives a Base64 password, stored as plain text |
+| `GET`    | `/users`                   | No  | **List all users** |
+| `GET`    | `/users/{id}`              | **Yes** | **Get user by ID** |
+| `GET`    | `/users/login/{login}`     | **Yes** | **Get user by login** (response excludes password) |
+| `PUT`    | `/users/{id}`              | **Yes** | **Update user** – `name`, `login`, and/or `password` (Base64); partial updates supported |
+| `DELETE` | `/users/{id}`              | **Yes** | **Soft delete** – sets `active = false` |
+| `GET`    | `/swagger-ui.html`         | No  | Swagger UI interactive documentation |
+
+> **Token usage:** the JWT returned by `POST /auth/login` is shared across both APIs. Include it as `Authorization: Bearer <token>` on all protected endpoints — both here and in the .NET CIS API.
 
 ### Request body for `POST /users`
 
@@ -157,13 +159,70 @@ dotnet run
 
 Default port: `http://localhost:5281`
 
-| Method | URL              | Description                     |
-|--------|------------------|---------------------------------|
-| `GET`  | `/api/v1/health` | API & Database health check     |
-| `GET`  | `/swagger`       | Swagger UI interactive documentation |
+| Method     | URL                     | Auth required | Description                          |
+|------------|-------------------------|:---:|--------------------------------------|
+| `GET`      | `/api/v1/health`        | No  | API & Database health check          |
+| `GET`      | `/api/v1/topics`        | No  | List all topics                      |
+| `POST`     | `/api/v1/topics`        | **Yes** | Create a topic                   |
+| `PUT`      | `/api/v1/topics/{id}`   | **Yes** | Update a topic                   |
+| `DELETE`   | `/api/v1/topics/{id}`   | **Yes** | Delete a topic                   |
+| `GET`      | `/api/v1/ideas`         | No  | List all ideas                       |
+| `POST`     | `/api/v1/ideas`         | **Yes** | Create an idea                   |
+| `PUT`      | `/api/v1/ideas/{id}`    | **Yes** | Update an idea                   |
+| `DELETE`   | `/api/v1/ideas/{id}`    | **Yes** | Delete an idea                   |
+| `POST`     | `/api/v1/votes`         | **Yes** | Cast a vote                      |
+| `DELETE`   | `/api/v1/votes/{id}`    | **Yes** | Remove a vote                    |
+| `GET`      | `/swagger`              | No  | Swagger UI interactive documentation |
+
+> **How to authenticate:** call `POST /api/v1/auth/login` on the **Java Users API** to obtain a JWT token, then include it as `Authorization: Bearer <token>` on every protected request.
+
+## Security — JWT Auth Interceptor
+
+All `POST`, `PUT`, and `DELETE` requests require a valid `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+The token is obtained from the **CIS Java API** (`POST /api/v1/auth/login`).
+
+### Validation flow
+
+```
+Client → .NET API (JwtAuthMiddleware)
+           ↓  validates JWT signature & expiry
+           ↓  GET /api/v1/users/login/{login}  →  Java Users API
+           ↓  checks user exists and is active
+        ✓ proceed  /  401 AUTH-401  /  403 AUTH-403
+```
+
+### Error responses
+
+| HTTP | Body | Cause |
+|------|------|-------|
+| `401` | `AUTH-401: Unauthorized access` | Missing / invalid / expired token, or user not found |
+| `403` | `AUTH-403: Forbidden - Account Inactive` | Token valid but user account is inactive |
 
 ## Configuration
-The database connection is configured in `cis-api-dotnet/appsettings.json`. It targets the same shared MySQL database used by the CLI and the Java API.
+`cis-api-dotnet/appsettings.json` contains two sections to configure:
+
+```json
+{
+  "ConnectionStrings": {
+    "CisDatabase": "Server=...;Port=...;Database=sd3;User=...;Password=..."
+  },
+  "Jwt": {
+    "Secret": "<same secret as the Java API>"
+  },
+  "UsersApi": {
+    "BaseUrl": "http://localhost:8080"
+  }
+}
+```
+
+- **CisDatabase** — shared MySQL database (Topics, Ideas, Votes tables)
+- **Jwt.Secret** — must match `jwt.secret` in the Java API's `application.properties`
+- **UsersApi.BaseUrl** — base URL of the Java Users API used to validate tokens
 
 ---
 
@@ -187,7 +246,7 @@ The project is configured to enforce a minimum of **80% line coverage** for the 
 
 ## CIS API .NET (cis-api-dotnet)
 
-Unit tests for `HealthController` and `HealthService` using xUnit and Moq.
+Unit tests for `HealthController`, `HealthService`, and `JwtAuthMiddleware` using xUnit and Moq.
 
 ### Run Tests
 ```bash
@@ -199,13 +258,21 @@ dotnet test
 | Framework | Role |
 |---|---|
 | xUnit | Test runner |
-| Moq | Mocking service dependencies |
+| Moq | Mocking service dependencies (`IUserValidationService`, `IHealthService`) |
 | EF Core InMemory | In-memory DB for service tests |
+
+### Test coverage
+| Test class | Scenarios covered |
+|---|---|
+| `HealthControllerTests` | DB connected (Healthy), DB disconnected (Degraded) |
+| `HealthServiceTests` | In-memory DB reachable |
+| `JwtAuthMiddlewareTests` | GET passes through, missing header → 401, invalid token → 401, user not found → 401, inactive user → 403, active user passes through, PUT/DELETE protected, Java API down → 401 |
 
 ---
 
 # Log of Changes
 
+- **V2.4. March 2026**: Implemented JWT Auth Interceptor in .NET API — delegated token validation to Java Users API (AUTH-401 / AUTH-403).
 - **V2.3. March 2026**: Initial setup for CIS API (C# / .NET 10) with Clean Architecture and EF Core for Topics/Ideas/Votes.
 - **V2.2. March 2026**: Implemented Unit Tests (JUnit 5 + Mockito) and JaCoCo coverage (80% min).
 - **V2.1. March 2026**: Added full CRUD endpoints and complete API documentation. Added JWT authentication.
