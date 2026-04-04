@@ -14,12 +14,16 @@ public class UserResponse {
     @Schema(description = "User login username", example = "johndoe")
     private String login;
 
+    @Schema(description = "User status", example = "true")
+    private Boolean active;
+
     public UserResponse() {}
 
-    public UserResponse(String id, String name, String login) {
+    public UserResponse(String id, String name, String login, Boolean active) {
         this.id = id;
         this.name = name;
         this.login = login;
+        this.active = active;
     }
 
     public String getId() { return id; }
@@ -30,4 +34,7 @@ public class UserResponse {
 
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
+
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 }

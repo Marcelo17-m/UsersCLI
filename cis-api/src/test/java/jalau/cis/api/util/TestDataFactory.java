@@ -1,6 +1,6 @@
 package jalau.cis.api.util;
 
-import jalau.cis.api.dto.UserDto;
+import jalau.cis.api.dto.UserUpdateRequest;
 import jalau.cis.api.dto.UserResponse;
 import jalau.cis.api.model.User;
 
@@ -9,14 +9,14 @@ import java.util.List;
 
 public final class TestDataFactory {
 
-    public static final String USER_ID    = "test-id-001";
-    public static final String USER_NAME  = "Test User";
+    public static final String USER_ID = "test-id-001";
+    public static final String USER_NAME = "Test User";
     public static final String USER_LOGIN = "testlogin";
-    public static final String USER_PASS  = "password123";
-    public static final String USER_PASS_B64 =
-            Base64.getEncoder().encodeToString(USER_PASS.getBytes());
+    public static final String USER_PASS = "password123";
+    public static final String USER_PASS_B64 = Base64.getEncoder().encodeToString(USER_PASS.getBytes());
 
-    private TestDataFactory() {}
+    private TestDataFactory() {
+    }
 
     public static User aUser() {
         User user = new User();
@@ -28,7 +28,7 @@ public final class TestDataFactory {
     }
 
     public static UserResponse aUserResponse() {
-        return new UserResponse(USER_ID, USER_NAME, USER_LOGIN);
+        return new UserResponse(USER_ID, USER_NAME, USER_LOGIN, true);
     }
 
     public static List<UserResponse> aUserResponseList() {
@@ -43,14 +43,16 @@ public final class TestDataFactory {
         return List.of(aUser());
     }
 
-    /** JSON body for POST /users with a valid Base64 password. */
+    public static List<UserResponse> aUserResponseList() {
+        return List.of(aUserResponse());
+    }
+
     public static String registerJson() {
         return String.format(
                 "{\"name\":\"%s\",\"login\":\"%s\",\"password\":\"%s\"}",
                 USER_NAME, USER_LOGIN, USER_PASS_B64);
     }
 
-    /** JSON body for PUT /users/{id}. */
     public static String updateJson() {
         return String.format(
                 "{\"name\":\"Updated Name\",\"login\":\"updatedlogin\",\"password\":\"%s\"}",

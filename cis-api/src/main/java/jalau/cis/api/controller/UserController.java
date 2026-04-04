@@ -3,8 +3,8 @@ package jalau.cis.api.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jalau.cis.api.dto.UserDto;
-import jalau.cis.api.dto.UserRequest;
+import jalau.cis.api.dto.UserCreateRequest;
+import jalau.cis.api.dto.UserUpdateRequest;
 import jalau.cis.api.dto.UserResponse;
 import jalau.cis.api.service.DeleteUserService;
 import jalau.cis.api.service.UpdateUserService;
@@ -31,9 +31,9 @@ public class UserController {
 
     @Autowired
     public UserController(JdbcTemplate jdbcTemplate,
-                          DeleteUserService deleteUserService,
-                          UserService userService,
-                          UpdateUserService updateUserService) {
+            DeleteUserService deleteUserService,
+            UserService userService,
+            UpdateUserService updateUserService) {
         this.jdbcTemplate = jdbcTemplate;
         this.deleteUserService = deleteUserService;
         this.userService = userService;
@@ -42,7 +42,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "Register a new user", description = "Receives a Base64 password and decodes it for DB storage.")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserCreateRequest request) {
         String generatedId = UUID.randomUUID().toString();
 
         String checkSql = "SELECT COUNT(*) FROM users WHERE login = ?";
@@ -79,7 +79,9 @@ public class UserController {
         if (updated == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(updated);
+        UserResponse response = new UserResponse(updated.getId(), updated.getName(), updated.getLogin(),
+                updated.getActive());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

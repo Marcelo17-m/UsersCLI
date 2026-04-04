@@ -1,6 +1,7 @@
 package jalau.cis.api.controller;
 
 import jalau.cis.api.config.SecurityConfig;
+import jalau.cis.api.service.UserService;
 import jalau.cis.api.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ class HealthControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockBean  private JdbcTemplate jdbcTemplate;
     @MockBean  private JwtUtil jwtUtil;
+    @MockBean  private UserService userService;
 
     @Test
     void health_dbReachable_returns200WithUpStatus() throws Exception {
