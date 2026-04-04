@@ -2,6 +2,7 @@ package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.dto.UserResponseDto;
+import jalau.cis.api.mapper.UserMapper;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,42 +18,29 @@ import java.util.UUID;
 public class UserService {
 
         private final UserRepository userRepository;
+        private final UserMapper userMapper;
 
         @Autowired
-        public UserService(UserRepository userRepository) {
+        public UserService(UserRepository userRepository, UserMapper userMapper) {
                 this.userRepository = userRepository;
+                this.userMapper = userMapper;
         }
 
         public UserResponseDto findById(String id) {
                 return userRepository.findById(id)
-                                .map(u -> UserResponseDto.builder()
-                                                .id(u.getId())
-                                                .name(u.getName())
-                                                .login(u.getLogin())
-                                                .active(u.getActive())
-                                                .build())
+                                .map(userMapper::toResponseDto)
                                 .orElse(null);
         }
 
         public UserResponseDto findByLogin(String login) {
                 return userRepository.findByLogin(login)
-                                .map(u -> UserResponseDto.builder()
-                                                .id(u.getId())
-                                                .name(u.getName())
-                                                .login(u.getLogin())
-                                                .active(u.getActive())
-                                                .build())
+                                .map(userMapper::toResponseDto)
                                 .orElse(null);
         }
 
         public List<UserResponseDto> findAll() {
                 return userRepository.findAll().stream()
-                                .map(u -> UserResponseDto.builder()
-                                                .id(u.getId())
-                                                .name(u.getName())
-                                                .login(u.getLogin())
-                                                .active(u.getActive())
-                                                .build())
+                                .map(userMapper::toResponseDto)
                                 .toList();
         }
 
@@ -69,18 +57,10 @@ public class UserService {
                         throw new IllegalArgumentException("Invalid format. Password must be Base64.");
                 }
 
-                UserModel user = new UserModel();
-                user.setId(UUID.randomUUID().toString());
-                user.setName(dto.getName());
-                user.setLogin(dto.getLogin());
-                user.setPassword(plainPassword);
-                user.setActive(true);
+                UserModel user = userMapper.toNewModel(dto, UUID.randomUUID().toString(), plainPassword);
 
                 UserModel saved = userRepository.save(user);
-                return UserResponseDto.builder()
-                                .id(saved.getId())
-                                .message("User registered successfully")
-                                .build();
+                return userMapper.toCreatedResponseDto(saved);
         }
 
         @Transactional
@@ -93,28 +73,20 @@ public class UserService {
 
                 UserModel user = existing.get();
 
-                if (dto.getName() != null && !dto.getName().isBlank()) {
-                        user.setName(dto.getName());
-                }
-                if (dto.getLogin() != null && !dto.getLogin().isBlank()) {
-                        user.setLogin(dto.getLogin());
-                }
+                String decodedPassword = null;
                 if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
                         try {
                                 byte[] decodedBytes = Base64.getDecoder().decode(dto.getPassword());
-                                user.setPassword(new String(decodedBytes));
+                                decodedPassword = new String(decodedBytes);
                         } catch (IllegalArgumentException e) {
-                                user.setPassword(dto.getPassword());
+                                decodedPassword = dto.getPassword();
                         }
                 }
 
+                userMapper.updateModel(user, dto, decodedPassword);
+
                 UserModel saved = userRepository.save(user);
-                return UserResponseDto.builder()
-                        .id(saved.getId())
-                        .name(saved.getName())
-                        .login(saved.getLogin())
-                        .active(saved.getActive())
-                        .build();
+                return userMapper.toResponseDto(saved);
         }
 
         public boolean delete(String id) {

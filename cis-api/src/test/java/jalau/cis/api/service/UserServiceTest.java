@@ -2,6 +2,7 @@ package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.dto.UserResponseDto;
+import jalau.cis.api.mapper.UserMapper;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,15 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private UserMapper userMapper;
     @InjectMocks
     private UserService userService;
 
     @Test
     void findByLogin_found_returnsUserResponse() {
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(aUser()));
+        when(userMapper.toResponseDto(any(UserModel.class))).thenReturn(aUserResponse());
 
         UserResponseDto result = userService.findByLogin(USER_LOGIN);
 
@@ -52,6 +56,7 @@ class UserServiceTest {
     @Test
     void findAll_returnsAllUsers() {
         when(userRepository.findAll()).thenReturn(aUserList());
+        when(userMapper.toResponseDto(any(UserModel.class))).thenReturn(aUserResponse());
 
         List<UserResponseDto> result = userService.findAll();
 
@@ -71,6 +76,7 @@ class UserServiceTest {
     @Test
     void findById_userExists_returnsUser() {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
+        when(userMapper.toResponseDto(any(UserModel.class))).thenReturn(aUserResponse());
 
         UserResponseDto result = userService.findById(USER_ID);
 
@@ -97,6 +103,12 @@ class UserServiceTest {
 
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(userRepository.save(any(UserModel.class))).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(UserResponseDto.builder()
+                .id(USER_ID)
+                .name("New Name")
+                .login("newlogin")
+                .active(true)
+                .build());
 
         UserRequestDto dto = UserRequestDto.builder()
                 .name("New Name")
@@ -117,6 +129,12 @@ class UserServiceTest {
 
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(userRepository.save(any(UserModel.class))).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(UserResponseDto.builder()
+                .id(USER_ID)
+                .name("Only Name")
+                .login(USER_LOGIN)
+                .active(true)
+                .build());
 
         UserRequestDto dto = UserRequestDto.builder().name("Only Name").build();
         UserResponseDto result = userService.update(USER_ID, dto);
@@ -132,6 +150,12 @@ class UserServiceTest {
 
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(userRepository.save(any(UserModel.class))).thenReturn(savedUser);
+        when(userMapper.toResponseDto(savedUser)).thenReturn(UserResponseDto.builder()
+                .id(USER_ID)
+                .name(USER_NAME)
+                .login("newlogin")
+                .active(true)
+                .build());
 
         UserRequestDto dto = UserRequestDto.builder().login("newlogin").build();
         UserResponseDto result = userService.update(USER_ID, dto);
@@ -144,6 +168,7 @@ class UserServiceTest {
     void update_invalidBase64Password_storesRawValue() {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(aUser()));
         when(userRepository.save(any(UserModel.class))).thenAnswer(i -> i.getArgument(0));
+        when(userMapper.toResponseDto(any(UserModel.class))).thenReturn(aUserResponse());
 
         UserRequestDto dto = UserRequestDto.builder().password("not-valid-base64!!!").build();
         UserResponseDto result = userService.update(USER_ID, dto);
