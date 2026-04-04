@@ -6,6 +6,7 @@ import jalau.cis.api.service.DeleteUserService;
 import jalau.cis.api.service.UpdateUserService;
 import jalau.cis.api.service.UserService;
 import jalau.cis.api.config.SecurityConfig;
+import jalau.cis.api.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -33,6 +34,7 @@ class UserControllerTest {
     @MockBean private DeleteUserService deleteUserService;
     @MockBean private UserService userService;
     @MockBean private UpdateUserService updateUserService;
+    @MockBean private JwtUtil jwtUtil;
 
     // ------------------------------------------------------------------ POST
 
