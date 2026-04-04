@@ -1,36 +1,50 @@
 package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserResponse;
+import jalau.cis.api.model.User;
+import jalau.cis.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserService {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final UserRepository userRepository;
 
     @Autowired
-    public UserService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public UserResponse findById(String id) {
+        return userRepository.findById(id)
+                .map(u -> new UserResponse(
+                        u.getId(),
+                        u.getName(),
+                        u.getLogin()))
+                .orElse(null);
     }
 
     public UserResponse findByLogin(String login) {
-        String sql = "SELECT id, name, login FROM users WHERE login = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, userRowMapper(), login);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+        return userRepository.findByLogin(login)
+                .map(u -> new UserResponse(
+                        u.getId(),
+                        u.getName(),
+                        u.getLogin()))
+                .orElse(null);
     }
 
-    private RowMapper<UserResponse> userRowMapper() {
-        return (rs, rowNum) -> new UserResponse(
-                rs.getString("id"),
-                rs.getString("name"),
-                rs.getString("login")
-        );
+    public List<UserResponse> findAll() {
+        return userRepository.findAll().stream()
+                .map(u -> new UserResponse(
+                        u.getId(),
+                        u.getName(),
+                        u.getLogin()))
+                .toList();
     }
 }

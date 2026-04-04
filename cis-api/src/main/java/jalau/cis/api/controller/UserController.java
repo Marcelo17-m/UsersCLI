@@ -1,18 +1,12 @@
 package jalau.cis.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jalau.cis.api.dto.UserDto;
 import jalau.cis.api.dto.UserRequest;
 import jalau.cis.api.dto.UserResponse;
-import jalau.cis.api.model.User;
 import jalau.cis.api.service.DeleteUserService;
-import jalau.cis.api.service.ReadUsersService;
 import jalau.cis.api.service.UpdateUserService;
 import jalau.cis.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,19 +25,16 @@ import java.util.UUID;
 public class UserController {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ReadUsersService readUserService;
     private final DeleteUserService deleteUserService;
     private final UserService userService;
     private final UpdateUserService updateUserService;
 
     @Autowired
     public UserController(JdbcTemplate jdbcTemplate,
-                          ReadUsersService readUserService,
                           DeleteUserService deleteUserService,
                           UserService userService,
                           UpdateUserService updateUserService) {
         this.jdbcTemplate = jdbcTemplate;
-        this.readUserService = readUserService;
         this.deleteUserService = deleteUserService;
         this.userService = userService;
         this.updateUserService = updateUserService;
@@ -81,30 +72,10 @@ public class UserController {
         }
     }
 
-    @GetMapping("/login/{login}")
-    @Operation(summary = "Get user by login")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User found",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
-            @ApiResponse(responseCode = "404", description = "User not found")
-    })
-    public ResponseEntity<?> getUserByLogin(@PathVariable String login) {
-        if (login == null || login.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Login cannot be empty"));
-        }
-
-        UserResponse user = userService.findByLogin(login);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found", "status", "404"));
-        }
-        return ResponseEntity.ok(user);
-    }
-
     @PutMapping("/{id}")
     @Operation(summary = "Update a user")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserDto dto) {
-        User updated = updateUserService.update(id, dto);
+        UserResponse updated = updateUserService.update(id, dto);
         if (updated == null) {
             return ResponseEntity.notFound().build();
         }
@@ -112,17 +83,30 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getUsers() {
-        return ResponseEntity.ok(readUserService.readAll());
-    }
+    @Operation(summary = "Get Users")
+    public ResponseEntity<?> getUser(
+            @RequestParam(required = false) String login,
+            @RequestParam(required = false) String id) {
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable String id) {
-        User user = readUserService.read(id);
-        if (user == null) {
-            return ResponseEntity.notFound().build();
+        if (login != null && !login.isBlank()) {
+            UserResponse user = userService.findByLogin(login);
+            if (user != null) {
+                return ResponseEntity.ok(user);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         }
-        return ResponseEntity.ok(user);
+
+        if (id != null && !id.isBlank()) {
+            UserResponse user = userService.findById(id);
+            if (user != null) {
+                return ResponseEntity.ok(user);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        }
+
+        return ResponseEntity.ok(userService.findAll());
     }
 
     @DeleteMapping("/{id}")

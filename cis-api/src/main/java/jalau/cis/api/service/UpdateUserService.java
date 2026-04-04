@@ -1,10 +1,10 @@
 package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserDto;
+import jalau.cis.api.dto.UserResponse;
 import jalau.cis.api.model.User;
 import jalau.cis.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +17,8 @@ public class UpdateUserService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     @Transactional
-    public User update(String id, UserDto dto){
-        System.out.println("Updating user: " + id + " with data: " + dto);
+    public UserResponse update(String id, UserDto dto){
         Optional<User> existing = userRepository.findById(id);
 
         if(existing.isEmpty()){
@@ -31,13 +27,13 @@ public class UpdateUserService {
 
         User user = existing.get();
 
-        if (dto.name() != null){
+        if (dto.name() != null && !dto.name().isBlank()){
             user.setName(dto.name());
         }
-        if (dto.login() != null){
+        if (dto.login() != null && !dto.login().isBlank()){
             user.setLogin(dto.login());
         }
-        if (dto.password() != null){
+        if (dto.password() != null && !dto.password().isBlank()){
             try {
                 byte[] decodedBytes = Base64.getDecoder().decode(dto.password());
                 user.setPassword(new String(decodedBytes));
@@ -46,9 +42,7 @@ public class UpdateUserService {
             }
         }
 
-        String sql = "UPDATE users SET name = ?, login = ?, password = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getName(), user.getLogin(), user.getPassword(), id);
-
-        return user;
+        User saved = userRepository.save(user);
+        return new UserResponse(saved.getId(), saved.getName(), saved.getLogin());
     }
 }

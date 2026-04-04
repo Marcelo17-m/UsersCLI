@@ -1,31 +1,28 @@
 package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserResponse;
+import jalau.cis.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+
+import java.util.Optional;
 
 import static jalau.cis.api.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock  private JdbcTemplate jdbcTemplate;
+    @Mock  private UserRepository userRepository;
     @InjectMocks private UserService userService;
 
     @Test
     void findByLogin_found_returnsUserResponse() {
-        UserResponse expected = aUserResponse();
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq(USER_LOGIN)))
-                .thenReturn(expected);
+        when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(aUser()));
 
         UserResponse result = userService.findByLogin(USER_LOGIN);
 
@@ -37,8 +34,7 @@ class UserServiceTest {
 
     @Test
     void findByLogin_notFound_returnsNull() {
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("ghost")))
-                .thenThrow(new EmptyResultDataAccessException(1));
+        when(userRepository.findByLogin("ghost")).thenReturn(Optional.empty());
 
         UserResponse result = userService.findByLogin("ghost");
 
