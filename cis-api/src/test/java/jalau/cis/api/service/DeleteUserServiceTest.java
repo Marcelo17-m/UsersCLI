@@ -2,7 +2,6 @@ package jalau.cis.api.service;
 
 import jalau.cis.api.model.User;
 import jalau.cis.api.repository.UserRepository;
-import jalau.cis.api.util.TestDataFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

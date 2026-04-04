@@ -31,6 +31,10 @@ public final class TestDataFactory {
         return new UserResponse(USER_ID, USER_NAME, USER_LOGIN);
     }
 
+    public static List<UserResponse> aUserResponseList() {
+        return List.of(aUserResponse());
+    }
+
     public static UserDto aUserDto() {
         return new UserDto("Updated Name", "updatedlogin", USER_PASS_B64);
     }
