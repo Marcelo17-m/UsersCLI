@@ -11,7 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import jalau.cis.api.dto.UserResponse;
+import jalau.cis.api.dto.UserResponseDto;
 import jalau.cis.api.service.UserService;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String login = jwtUtil.extractLogin(token);
-        UserResponse user = userService.findByLogin(login);
+        UserResponseDto user = userService.findByLogin(login);
 
         if (user == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
