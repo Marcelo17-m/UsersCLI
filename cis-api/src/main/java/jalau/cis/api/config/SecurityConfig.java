@@ -22,6 +22,8 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
+    @Autowired
+    private SecurityErrorResponseWriter securityErrorResponseWriter;
 
     @Bean
     public SecurityFilterChain FilterChain(HttpSecurity http) throws Exception {
@@ -47,11 +49,22 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("text/plain");
-                            response.getWriter().write("AUTH-401: Unauthorized access");
-                        })
+                        .authenticationEntryPoint((request, response, authException) ->
+                                securityErrorResponseWriter.write(
+                                        request,
+                                        response,
+                                        jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED,
+                                        "AUTH-401",
+                                        "Unauthorized access"
+                                ))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                securityErrorResponseWriter.write(
+                                        request,
+                                        response,
+                                        jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN,
+                                        "AUTH-403",
+                                        "Forbidden access"
+                                ))
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

@@ -1,6 +1,7 @@
 package jalau.cis.api.controller;
 
 import jalau.cis.api.config.SecurityConfig;
+import jalau.cis.api.config.SecurityErrorResponseWriter;
 import jalau.cis.api.dto.AuthResponseDto;
 import jalau.cis.api.service.AuthService;
 import jalau.cis.api.service.UserService;
@@ -21,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SecurityErrorResponseWriter.class})
 class AuthControllerTest {
 
     @Autowired

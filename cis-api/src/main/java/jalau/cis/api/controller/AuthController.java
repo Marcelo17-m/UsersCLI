@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jalau.cis.api.dto.AuthRequestDto;
 import jalau.cis.api.dto.AuthResponseDto;
+import jalau.cis.api.dto.ErrorResponseDto;
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,8 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Login successful",
                     content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDto request) {
         try {

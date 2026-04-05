@@ -2,6 +2,8 @@ package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.dto.UserResponseDto;
+import jalau.cis.api.exception.DuplicateLoginException;
+import jalau.cis.api.exception.UserNotFoundException;
 import jalau.cis.api.mapper.UserMapper;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
@@ -29,13 +31,13 @@ public class UserService {
         public UserResponseDto findById(String id) {
                 return userRepository.findById(id)
                                 .map(userMapper::toResponseDto)
-                                .orElse(null);
+                                .orElseThrow(() -> new UserNotFoundException("User not found."));
         }
 
         public UserResponseDto findByLogin(String login) {
                 return userRepository.findByLogin(login)
                                 .map(userMapper::toResponseDto)
-                                .orElse(null);
+                                .orElseThrow(() -> new UserNotFoundException("User not found."));
         }
 
         public List<UserResponseDto> findAll() {
@@ -46,7 +48,7 @@ public class UserService {
 
         public UserResponseDto create(UserRequestDto dto) {
                 if (userRepository.findByLogin(dto.getLogin()).isPresent()) {
-                        throw new IllegalStateException("User with same Login already exists.");
+                        throw new DuplicateLoginException("User with same Login already exists.");
                 }
 
                 String plainPassword;
@@ -65,13 +67,8 @@ public class UserService {
 
         @Transactional
         public UserResponseDto update(String id, UserRequestDto dto) {
-                Optional<UserModel> existing = userRepository.findById(id);
-
-                if (existing.isEmpty()) {
-                        return null;
-                }
-
-                UserModel user = existing.get();
+                UserModel user = userRepository.findById(id)
+                        .orElseThrow(() -> new UserNotFoundException("User not found."));
 
                 String decodedPassword = null;
                 if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
@@ -90,13 +87,8 @@ public class UserService {
         }
 
         public boolean delete(String id) {
-                Optional<UserModel> existing = userRepository.findById(id);
-
-                if (existing.isEmpty()) {
-                        return false;
-                }
-
-                UserModel user = existing.get();
+                UserModel user = userRepository.findById(id)
+                        .orElseThrow(() -> new UserNotFoundException("User not found."));
                 user.setActive(false);
                 userRepository.save(user);
 

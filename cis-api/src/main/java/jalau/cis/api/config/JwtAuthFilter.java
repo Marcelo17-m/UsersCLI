@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jalau.cis.api.exception.UserNotFoundException;
 import jalau.cis.api.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +27,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private SecurityErrorResponseWriter securityErrorResponseWriter;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -42,26 +45,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         if (!jwtUtil.validateToken(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("text/plain");
-            response.getWriter().write("AUTH-401: Unauthorized access");
+            securityErrorResponseWriter.write(request, response, HttpServletResponse.SC_UNAUTHORIZED,
+                    "AUTH-401", "Unauthorized access");
             return;
         }
 
         String login = jwtUtil.extractLogin(token);
-        UserResponseDto user = userService.findByLogin(login);
-
-        if (user == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("text/plain");
-            response.getWriter().write("AUTH-401: Unauthorized access");
+        UserResponseDto user;
+        try {
+            user = userService.findByLogin(login);
+        } catch (UserNotFoundException ex) {
+            securityErrorResponseWriter.write(request, response, HttpServletResponse.SC_UNAUTHORIZED,
+                    "AUTH-401", "Unauthorized access");
             return;
         }
 
         if (!Boolean.TRUE.equals(user.getActive())) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("text/plain");
-            response.getWriter().write("AUTH-403: Forbidden - Account Inactive");
+            securityErrorResponseWriter.write(request, response, HttpServletResponse.SC_FORBIDDEN,
+                    "AUTH-403", "Forbidden - Account Inactive");
             return;
         }
 

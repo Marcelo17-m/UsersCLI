@@ -2,6 +2,8 @@ package jalau.cis.api.service;
 
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.dto.UserResponseDto;
+import jalau.cis.api.exception.DuplicateLoginException;
+import jalau.cis.api.exception.UserNotFoundException;
 import jalau.cis.api.mapper.UserMapper;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
@@ -18,6 +20,7 @@ import java.util.Optional;
 
 import static jalau.cis.api.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -45,12 +48,12 @@ class UserServiceTest {
     }
 
     @Test
-    void findByLogin_notFound_returnsNull() {
+    void findByLogin_notFound_throwsUserNotFoundException() {
         when(userRepository.findByLogin("ghost")).thenReturn(Optional.empty());
 
-        UserResponseDto result = userService.findByLogin("ghost");
-
-        assertThat(result).isNull();
+        assertThatThrownBy(() -> userService.findByLogin("ghost"))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("User not found.");
     }
 
     @Test
@@ -87,12 +90,12 @@ class UserServiceTest {
     }
 
     @Test
-    void findById_userNotFound_returnsNull() {
+    void findById_userNotFound_throwsUserNotFoundException() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        UserResponseDto result = userService.findById("unknown");
-
-        assertThat(result).isNull();
+        assertThatThrownBy(() -> userService.findById("unknown"))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("User not found.");
     }
 
     @Test
@@ -178,12 +181,12 @@ class UserServiceTest {
     }
 
     @Test
-    void update_userNotFound_returnsNull() {
+    void update_userNotFound_throwsUserNotFoundException() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        UserResponseDto result = userService.update("unknown", aUserRequest());
-
-        assertThat(result).isNull();
+        assertThatThrownBy(() -> userService.update("unknown", aUserRequest()))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("User not found.");
     }
 
     @Test
@@ -201,13 +204,22 @@ class UserServiceTest {
     }
 
     @Test
-    void delete_userNotFound_returnsFalse() {
+    void delete_userNotFound_throwsUserNotFoundException() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        boolean result = userService.delete("unknown");
-
-        assertThat(result).isFalse();
+        assertThatThrownBy(() -> userService.delete("unknown"))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("User not found.");
         verify(userRepository, never()).save(any());
         verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void create_duplicateLogin_throwsDuplicateLoginException() {
+        when(userRepository.findByLogin("updatedlogin")).thenReturn(Optional.of(aUser()));
+
+        assertThatThrownBy(() -> userService.create(aUserRequest()))
+                .isInstanceOf(DuplicateLoginException.class)
+                .hasMessage("User with same Login already exists.");
     }
 }
