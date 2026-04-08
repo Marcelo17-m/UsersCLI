@@ -3,6 +3,9 @@ package jalau.cis.api.service;
 import jalau.cis.api.dto.AuthRequestDto;
 import jalau.cis.api.dto.AuthResponseDto;
 import jalau.cis.api.dto.UserRequestDto;
+import jalau.cis.api.exception.DuplicateLoginException;
+import jalau.cis.api.exception.InactiveUserException;
+import jalau.cis.api.exception.InvalidCredentialsException;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
 import jalau.cis.api.util.JwtUtil;
@@ -50,7 +53,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_userNotFound_throwsRuntimeException() {
+    void login_userNotFound_throwsInvalidCredentialsException() {
         when(userRepository.findByLogin("ghost")).thenReturn(Optional.empty());
 
         AuthRequestDto request = new AuthRequestDto();
@@ -58,12 +61,12 @@ class AuthServiceTest {
         request.setPassword("any");
 
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Invalid Credentials");
     }
 
     @Test
-    void login_inactiveUser_throwsRuntimeException() {
+    void login_inactiveUser_throwsInactiveUserException() {
         UserModel user = aUser();
         user.setActive(false);
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(user));
@@ -73,12 +76,12 @@ class AuthServiceTest {
         request.setPassword(USER_PASS_B64);
 
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InactiveUserException.class)
                 .hasMessage("Inactive User");
     }
 
     @Test
-    void login_wrongPassword_throwsRuntimeException() {
+    void login_wrongPassword_throwsInvalidCredentialsException() {
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(aUser()));
 
         AuthRequestDto request = new AuthRequestDto();
@@ -86,7 +89,7 @@ class AuthServiceTest {
         request.setPassword("wrongpassword");
 
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Invalid Credentials");
     }
 
@@ -115,7 +118,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_duplicateLogin_throwsIllegalStateException() {
+    void register_duplicateLogin_throwsDuplicateLoginException() {
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(aUser()));
 
         UserRequestDto request = UserRequestDto.builder()
@@ -125,7 +128,7 @@ class AuthServiceTest {
                 .build();
 
         assertThatThrownBy(() -> authService.register(request))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(DuplicateLoginException.class)
                 .hasMessage("User with same Login already exists.");
     }
 

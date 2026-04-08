@@ -27,6 +27,18 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.CONFLICT, "USR-409", ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidCredentials(InvalidCredentialsException ex,
+                                                                     HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, "AUTH-401", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InactiveUserException.class)
+    public ResponseEntity<ErrorResponseDto> handleInactiveUser(InactiveUserException ex,
+                                                               HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, "AUTH-401", ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDto> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, "USR-400", ex.getMessage(), request.getRequestURI());

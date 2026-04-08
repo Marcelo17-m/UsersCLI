@@ -94,12 +94,23 @@ class UserControllerTest {
         // ------------------------------------------------------------------ GET all
 
         @Test
+        @WithMockUser
         void getUsers_returns200WithList() throws Exception {
                 when(userService.findAll()).thenReturn(aUserResponseList());
 
                 mockMvc.perform(get("/users"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$", hasSize(1)));
+        }
+
+        @Test
+        void getUsers_withoutAuth_returns401() throws Exception {
+                mockMvc.perform(get("/users"))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("AUTH-401"))
+                                .andExpect(jsonPath("$.message").value("Unauthorized access"))
+                                .andExpect(jsonPath("$.timestamp").exists())
+                                .andExpect(jsonPath("$.path").value("/users"));
         }
 
         // ------------------------------------------------------------------ GET by ID

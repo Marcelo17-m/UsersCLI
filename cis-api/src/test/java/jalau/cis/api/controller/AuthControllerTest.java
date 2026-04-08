@@ -3,6 +3,9 @@ package jalau.cis.api.controller;
 import jalau.cis.api.config.SecurityConfig;
 import jalau.cis.api.config.SecurityErrorResponseWriter;
 import jalau.cis.api.dto.AuthResponseDto;
+import jalau.cis.api.exception.DuplicateLoginException;
+import jalau.cis.api.exception.InactiveUserException;
+import jalau.cis.api.exception.InvalidCredentialsException;
 import jalau.cis.api.service.AuthService;
 import jalau.cis.api.service.UserService;
 import jalau.cis.api.util.JwtUtil;
@@ -55,23 +58,25 @@ class AuthControllerTest {
 
     @Test
     void login_invalidCredentials_returns401() throws Exception {
-        when(authService.login(any())).thenThrow(new RuntimeException("Invalid Credentials"));
+        when(authService.login(any())).thenThrow(new InvalidCredentialsException("Invalid Credentials"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON))
                 .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH-401"))
                 .andExpect(jsonPath("$.message").value("Invalid Credentials"));
     }
 
     @Test
     void login_inactiveUser_returns401() throws Exception {
-        when(authService.login(any())).thenThrow(new RuntimeException("Inactive User"));
+        when(authService.login(any())).thenThrow(new InactiveUserException("Inactive User"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON))
                 .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH-401"))
                 .andExpect(jsonPath("$.message").value("Inactive User"));
     }
 
@@ -97,13 +102,14 @@ class AuthControllerTest {
 
     @Test
     void register_duplicateLogin_returns409() throws Exception {
-        doThrow(new IllegalStateException("User with same Login already exists."))
+        doThrow(new DuplicateLoginException("User with same Login already exists."))
                 .when(authService).register(any());
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(REGISTER_JSON))
                 .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("USR-409"))
                 .andExpect(jsonPath("$.message").value("User with same Login already exists."));
     }
 

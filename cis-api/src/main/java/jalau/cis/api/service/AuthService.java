@@ -3,6 +3,9 @@ package jalau.cis.api.service;
 import jalau.cis.api.dto.AuthRequestDto;
 import jalau.cis.api.dto.AuthResponseDto;
 import jalau.cis.api.dto.UserRequestDto;
+import jalau.cis.api.exception.DuplicateLoginException;
+import jalau.cis.api.exception.InactiveUserException;
+import jalau.cis.api.exception.InvalidCredentialsException;
 import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
 import jalau.cis.api.util.JwtUtil;
@@ -26,10 +29,10 @@ public class AuthService {
 
     public AuthResponseDto login(AuthRequestDto request) {
         UserModel user = userRepository.findByLogin(request.getLogin())
-                .orElseThrow(() -> new RuntimeException("Invalid Credentials"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid Credentials"));
 
         if (user.getActive() == null || !user.getActive()) {
-            throw new RuntimeException("Inactive User");
+            throw new InactiveUserException("Inactive User");
         }
 
         String plainPassword;
@@ -37,11 +40,11 @@ public class AuthService {
             byte[] decodedBytes = Base64.getDecoder().decode(request.getPassword());
             plainPassword = new String(decodedBytes);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid Credentials");
+            throw new InvalidCredentialsException("Invalid Credentials");
         }
 
         if (!plainPassword.equals(user.getPassword())) {
-            throw new RuntimeException("Invalid Credentials");
+            throw new InvalidCredentialsException("Invalid Credentials");
         }
 
         String token = jwtUtil.generateToken(user.getLogin());
@@ -50,7 +53,7 @@ public class AuthService {
 
     public void register(UserRequestDto request) {
         if (userRepository.findByLogin(request.getLogin()).isPresent()) {
-            throw new IllegalStateException("User with same Login already exists.");
+            throw new DuplicateLoginException("User with same Login already exists.");
         }
 
         String plainPassword;

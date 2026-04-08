@@ -13,7 +13,6 @@ import jalau.cis.api.dto.ErrorResponseDto;
 import jalau.cis.api.dto.UserRequestDto;
 import jalau.cis.api.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,14 +44,9 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid credentials",
                     content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDto request) {
-        try {
-            AuthResponseDto response = authService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponseDto(null, e.getMessage()));
-        }
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody AuthRequestDto request) {
+        AuthResponseDto response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
@@ -62,19 +56,13 @@ public class AuthController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "User registered successfully"),
-            @ApiResponse(responseCode = "409", description = "Login already exists"),
-            @ApiResponse(responseCode = "400", description = "Invalid password format")
+            @ApiResponse(responseCode = "409", description = "Login already exists",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid password format",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
-    public ResponseEntity<?> register(@Valid @RequestBody UserRequestDto request) {
-        try {
-            authService.register(request);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new AuthResponseDto(null, e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(new AuthResponseDto(null, e.getMessage()));
-        }
+    public ResponseEntity<Void> register(@Valid @RequestBody UserRequestDto request) {
+        authService.register(request);
+        return ResponseEntity.noContent().build();
     }
 }
