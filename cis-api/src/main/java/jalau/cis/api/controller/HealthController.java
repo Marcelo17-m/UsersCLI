@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jalau.cis.api.dto.HealthResponse;
+import jalau.cis.api.dto.HealthResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -38,15 +38,15 @@ public class HealthController {
   /**
    * Returns the current status of the API and its database connection.
    *
-   * @return {@link HealthResponse} with status, timestamp, and DB connectivity
+   * @return {@link HealthResponseDto} with status, timestamp, and DB connectivity
    *         flag.
    */
   @GetMapping
   @Operation(summary = "API Health Check", description = "Returns the API status and verifies connectivity to the MySQL database.", responses = {
-      @ApiResponse(responseCode = "200", description = "API is up and running", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HealthResponse.class))),
+      @ApiResponse(responseCode = "200", description = "API is up and running", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HealthResponseDto.class))),
       @ApiResponse(responseCode = "503", description = "API is up but the database is unreachable")
   })
-  public ResponseEntity<HealthResponse> health() {
+  public ResponseEntity<HealthResponseDto> health() {
     boolean dbOk = false;
     String dbMessage;
 
@@ -58,7 +58,7 @@ public class HealthController {
       dbMessage = "Database unreachable: " + ex.getMessage();
     }
 
-    HealthResponse response = new HealthResponse(
+    HealthResponseDto response = new HealthResponseDto(
         dbOk ? "UP" : "DEGRADED",
         LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
         dbOk,

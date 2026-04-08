@@ -3,18 +3,19 @@ package jalau.cis.api.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-@Schema(description = "Login request")
-public class LoginRequest {
+@Schema(description = "Authentication request")
+public class AuthRequestDto {
 
     @NotBlank(message = "Login is required")
     @Schema(description = "Username", example = "tita123")
     private String login;
 
     @NotBlank(message = "Password is required")
-    @Schema(description = "Password in plain text", example = "muzques123")
+    @Schema(description = "Password encoded in Base64", example = "cGFzc3dvcmQxMjM=")
     private String password;
 
-    public LoginRequest() {}
+    public AuthRequestDto() {
+    }
 
     public String getLogin() {
         return login;

@@ -1,4 +1,5 @@
 using CisDotnetApi.Data;
+using CisDotnetApi.Middleware;
 using CisDotnetApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -12,6 +13,12 @@ builder.Services.AddDbContext<CisDbContext>(options =>
 
 builder.Services.AddScoped<IHealthService, HealthService>();
 
+var usersApiBase = builder.Configuration["UsersApi:BaseUrl"]!;
+builder.Services.AddHttpClient<IUserValidationService, UserValidationService>(c =>
+{
+    c.BaseAddress = new Uri(usersApiBase.TrimEnd('/') + "/api/v1/");
+});
+
 builder.Services.AddControllers(options =>
 {
     options.Conventions.Add(new RoutePrefixConvention("api/v1"));
@@ -21,15 +28,14 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/openapi/v1.json", "CIS API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/openapi/v1.json", "CIS API v1");
+    c.RoutePrefix = "swagger";
+});
+
+app.UseMiddleware<JwtAuthMiddleware>();
 
 app.MapControllers();
 
