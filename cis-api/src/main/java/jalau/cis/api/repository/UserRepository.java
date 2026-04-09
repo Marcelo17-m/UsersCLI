@@ -1,12 +1,12 @@
 package jalau.cis.api.repository;
 
-import jalau.cis.api.model.User;
+import jalau.cis.api.model.UserModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
-    Optional<User> findByLogin(String login);
+public interface UserRepository extends JpaRepository<UserModel, String> {
+    Optional<UserModel> findByLogin(String login);
 }

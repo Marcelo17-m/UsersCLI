@@ -1,6 +1,8 @@
 package jalau.cis.api.controller;
 
 import jalau.cis.api.config.SecurityConfig;
+import jalau.cis.api.config.SecurityErrorResponseWriter;
+import jalau.cis.api.service.UserService;
 import jalau.cis.api.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +19,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(HealthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SecurityErrorResponseWriter.class})
 class HealthControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockBean  private JdbcTemplate jdbcTemplate;
     @MockBean  private JwtUtil jwtUtil;
+    @MockBean  private UserService userService;
 
     @Test
     void health_dbReachable_returns200WithUpStatus() throws Exception {

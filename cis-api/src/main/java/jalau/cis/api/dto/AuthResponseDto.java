@@ -2,8 +2,8 @@ package jalau.cis.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Login response with JWT token")
-public class LoginResponse {
+@Schema(description = "Authentication response with JWT token")
+public class AuthResponseDto {
 
     @Schema(description = "JWT token", example = "e2513534soughui1058hola158")
     private String token;
@@ -11,9 +11,10 @@ public class LoginResponse {
     @Schema(description = "Response message", example = "Successful login")
     private String message;
 
-    public LoginResponse() {}
+    public AuthResponseDto() {
+    }
 
-    public LoginResponse(String token, String message) {
+    public AuthResponseDto(String token, String message) {
         this.token = token;
         this.message = message;
     }

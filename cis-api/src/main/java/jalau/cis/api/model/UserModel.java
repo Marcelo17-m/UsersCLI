@@ -1,15 +1,18 @@
 package jalau.cis.api.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users", schema = "sd3")
-public class User {
+public class UserModel {
 
     @Id
     private String id;
 
-    @Column(name ="name")
+    @Column(name = "name")
     private String name;
 
     @Column(name = "login")

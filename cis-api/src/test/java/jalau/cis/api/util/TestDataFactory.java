@@ -1,45 +1,55 @@
 package jalau.cis.api.util;
 
-import jalau.cis.api.dto.UserDto;
-import jalau.cis.api.dto.UserResponse;
-import jalau.cis.api.model.User;
+import jalau.cis.api.dto.UserRequestDto;
+import jalau.cis.api.dto.UserResponseDto;
+import jalau.cis.api.model.UserModel;
 
 import java.util.Base64;
 import java.util.List;
 
 public final class TestDataFactory {
 
-    public static final String USER_ID    = "test-id-001";
-    public static final String USER_NAME  = "Test User";
+    public static final String USER_ID = "test-id-001";
+    public static final String USER_NAME = "Test User";
     public static final String USER_LOGIN = "testlogin";
-    public static final String USER_PASS  = "password123";
-    public static final String USER_PASS_B64 =
-            Base64.getEncoder().encodeToString(USER_PASS.getBytes());
+    public static final String USER_PASS = "password123";
+    public static final String USER_PASS_B64 = Base64.getEncoder().encodeToString(USER_PASS.getBytes());
 
-    private TestDataFactory() {}
+    private TestDataFactory() {
+    }
 
-    public static User aUser() {
-        User user = new User();
+    public static UserModel aUser() {
+        UserModel user = new UserModel();
         user.setId(USER_ID);
         user.setName(USER_NAME);
         user.setLogin(USER_LOGIN);
         user.setPassword(USER_PASS);
+        user.setActive(true);
         return user;
     }
 
-    public static UserResponse aUserResponse() {
-        return new UserResponse(USER_ID, USER_NAME, USER_LOGIN);
+    public static UserResponseDto aUserResponse() {
+        return UserResponseDto.builder()
+                .id(USER_ID)
+                .name(USER_NAME)
+                .login(USER_LOGIN)
+                .active(true)
+                .build();
     }
 
-    public static List<UserResponse> aUserResponseList() {
+    public static List<UserResponseDto> aUserResponseList() {
         return List.of(aUserResponse());
     }
 
-    public static UserDto aUserDto() {
-        return new UserDto("Updated Name", "updatedlogin", USER_PASS_B64);
+    public static UserRequestDto aUserRequest() {
+        return UserRequestDto.builder()
+                .name("Updated Name")
+                .login("updatedlogin")
+                .password(USER_PASS_B64)
+                .build();
     }
 
-    public static List<User> aUserList() {
+    public static List<UserModel> aUserList() {
         return List.of(aUser());
     }
 
