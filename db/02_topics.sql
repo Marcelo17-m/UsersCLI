@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS `topics` (
     `Title` VARCHAR(200) NOT NULL,
     `Description` TEXT NOT NULL,
     `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `AuthorId` INT NOT NULL,
+    `AuthorId` VARCHAR(36) NOT NULL,
     `Active` BOOLEAN NOT NULL DEFAULT TRUE,
-    FOREIGN KEY (`AuthorId`) REFERENCES `users`(`Id`)
+    FOREIGN KEY (`AuthorId`) REFERENCES `users`(`id`)
 );
