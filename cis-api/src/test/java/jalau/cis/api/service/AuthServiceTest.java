@@ -15,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -30,6 +31,8 @@ class AuthServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
     private JwtUtil jwtUtil;
     @InjectMocks
     private AuthService authService;
@@ -39,17 +42,19 @@ class AuthServiceTest {
     @Test
     void login_validCredentials_returnsTokenResponse() {
         UserModel user = aUser();
+        user.setPassword("encoded_pass");
+
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), eq("encoded_pass"))).thenReturn(true);
         when(jwtUtil.generateToken(USER_LOGIN)).thenReturn("jwt-token");
 
         AuthRequestDto request = new AuthRequestDto();
         request.setLogin(USER_LOGIN);
-        request.setPassword(USER_PASS_B64);
+        request.setPassword("plano123");
 
         AuthResponseDto response = authService.login(request);
 
         assertThat(response.getToken()).isEqualTo("jwt-token");
-        assertThat(response.getMessage()).isEqualTo("Successful login");
     }
 
     @Test
@@ -96,25 +101,19 @@ class AuthServiceTest {
     // ------------------------------------------------------------------ register
 
     @Test
-    void register_validRequest_savesUserWithDecodedPassword() {
+    void register_validRequest_savesUserWithHashedPassword() {
         when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.empty());
-        when(userRepository.save(any(UserModel.class))).thenAnswer(i -> i.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
 
         UserRequestDto request = UserRequestDto.builder()
-                .name(USER_NAME)
-                .login(USER_LOGIN)
-                .password(USER_PASS_B64)
-                .build();
+                .name(USER_NAME).login(USER_LOGIN).password("cualquier_password").build();
 
         authService.register(request);
 
         ArgumentCaptor<UserModel> captor = ArgumentCaptor.forClass(UserModel.class);
         verify(userRepository).save(captor.capture());
-        UserModel saved = captor.getValue();
-        assertThat(saved.getName()).isEqualTo(USER_NAME);
-        assertThat(saved.getLogin()).isEqualTo(USER_LOGIN);
-        assertThat(saved.getPassword()).isEqualTo(USER_PASS);
-        assertThat(saved.getActive()).isTrue();
+        assertThat(captor.getValue().getPassword()).isEqualTo("hashed_password");
+        assertThat(captor.getValue().getActive()).isTrue();
     }
 
     @Test
@@ -132,18 +131,4 @@ class AuthServiceTest {
                 .hasMessage("User with same Login already exists.");
     }
 
-    @Test
-    void register_invalidBase64Password_throwsIllegalArgumentException() {
-        when(userRepository.findByLogin(USER_LOGIN)).thenReturn(Optional.empty());
-
-        UserRequestDto request = UserRequestDto.builder()
-                .name(USER_NAME)
-                .login(USER_LOGIN)
-                .password("!!not-base64!!")
-                .build();
-
-        assertThatThrownBy(() -> authService.register(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Invalid format. Password must be Base64.");
-    }
 }

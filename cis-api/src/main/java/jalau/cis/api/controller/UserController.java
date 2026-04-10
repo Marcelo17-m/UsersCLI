@@ -14,6 +14,7 @@ import jalau.cis.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,20 +31,16 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    @Operation(summary = "Register a new user", description = "Receives a Base64 password and decodes it for DB storage.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data",
-                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
-            @ApiResponse(responseCode = "409", description = "Duplicate login",
-                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
-    })
-    public ResponseEntity<UserResponseDto> register(@Valid @RequestBody UserRequestDto request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(request));
-    }
+    // </editor-fold>
 
+    // <editor-fold desc="Update Logic">
+
+    /**
+     * Updates the data of an existing user by ID.
+     * @param id The unique identifier of the user to update.
+     * @param dto New user data to apply.
+     * @return Updated user wrapped in UserResponseDto.
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Update a user")
     @ApiResponses(value = {
@@ -58,6 +55,14 @@ public class UserController {
         return ResponseEntity.ok(userService.update(id, dto));
     }
 
+    // <editor-fold desc="Read Logic">
+
+    /**
+     * Retrieves users by optial filters (login or id), or returns all users if no filter is provided.
+     * @param login Optional login filter.
+     * @param id Optional user ID filter.
+     * @return Matching user(s) wrapped in ResponseEntity
+     */
     @GetMapping
     @Operation(summary = "Get Users")
     @ApiResponses(value = {
@@ -80,6 +85,16 @@ public class UserController {
         return ResponseEntity.ok(userService.findAll());
     }
 
+    // </editor-fold>
+
+    // <editor-fold desc="Deletion Logic">
+
+    /**
+     * Disables a user account using JWT context for audit traceability.
+     * @param id The unique identifier of the user to disable.
+     * @param authentication Injected JWT authentication context for audit logging.
+     * @return Success message wrapped in UserResponseDto.
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Disable a user")
     @ApiResponses(value = {
@@ -90,8 +105,11 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
-    public ResponseEntity<?> deleteUser(@PathVariable String id) {
-        userService.delete(id);
+    public ResponseEntity<?> deleteUser(@PathVariable String id, Authentication authentication) {
+        String loginName = authentication != null ? authentication.getName() : null;
+        userService.delete(id, loginName);
         return ResponseEntity.ok(UserResponseDto.builder().message("User disabled successfully").build());
     }
+
+    // </editor-fold>
 }
