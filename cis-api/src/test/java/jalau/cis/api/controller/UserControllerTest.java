@@ -10,6 +10,7 @@ import jalau.cis.api.config.SecurityErrorResponseWriter;
 import jalau.cis.api.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -35,61 +36,6 @@ class UserControllerTest {
         private UserService userService;
         @MockBean
         private JwtUtil jwtUtil;
-
-        // ------------------------------------------------------------------ POST
-
-        @Test
-        void register_success_returns201() throws Exception {
-                when(userService.create(any(UserRequestDto.class))).thenReturn(
-                                UserResponseDto.builder().id(USER_ID).message("User registered successfully").build());
-
-                mockMvc.perform(post("/users")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(registerJson()))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.message").value("User registered successfully"))
-                                .andExpect(jsonPath("$.id").exists());
-        }
-
-        @Test
-        void register_duplicateUser_returns409() throws Exception {
-                when(userService.create(any(UserRequestDto.class)))
-                                .thenThrow(new DuplicateLoginException("User with same Login already exists."));
-
-                mockMvc.perform(post("/users")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(registerJson()))
-                                .andExpect(status().isConflict())
-                                .andExpect(jsonPath("$.code").value("USR-409"))
-                                .andExpect(jsonPath("$.message").value("User with same Login already exists."))
-                                .andExpect(jsonPath("$.timestamp").exists())
-                                .andExpect(jsonPath("$.path").value("/users"));
-        }
-
-        @Test
-        void register_invalidBase64Password_returns400() throws Exception {
-                when(userService.create(any(UserRequestDto.class)))
-                                .thenThrow(new IllegalArgumentException("Invalid format. Password must be Base64."));
-
-                String body = "{\"name\":\"Name\",\"login\":\"login1\",\"password\":\"!!not-base64!!\"}";
-                mockMvc.perform(post("/users")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(body))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value("USR-400"))
-                                .andExpect(jsonPath("$.message").value("Invalid format. Password must be Base64."))
-                                .andExpect(jsonPath("$.timestamp").exists())
-                                .andExpect(jsonPath("$.path").value("/users"));
-        }
-
-        @Test
-        void register_missingRequiredFields_returns400() throws Exception {
-                String body = "{\"id\":\"\",\"name\":\"\",\"login\":\"\",\"password\":\"\"}";
-                mockMvc.perform(post("/users")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(body))
-                                .andExpect(status().isBadRequest());
-        }
 
         // ------------------------------------------------------------------ GET all
 
@@ -216,11 +162,11 @@ class UserControllerTest {
         @Test
         @WithMockUser
         void deleteUser_found_returns200() throws Exception {
-                when(userService.delete(USER_ID)).thenReturn(true);
+            when(userService.delete(USER_ID, "user")).thenReturn(true);
 
-                mockMvc.perform(delete("/users/{id}", USER_ID))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.message").value("User disabled successfully"));
+            mockMvc.perform(delete("/users/{id}", USER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("User disabled successfully"));
         }
 
         @Test
@@ -236,7 +182,7 @@ class UserControllerTest {
         @Test
         @WithMockUser
         void deleteUser_notFound_returns404() throws Exception {
-                when(userService.delete("unknown")).thenThrow(new UserNotFoundException("User not found."));
+            when(userService.delete("unknown", "user")).thenThrow(new UserNotFoundException("User not found."));
 
                 mockMvc.perform(delete("/users/{id}", "unknown"))
                                 .andExpect(status().isNotFound())

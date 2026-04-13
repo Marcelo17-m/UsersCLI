@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,8 @@ class UserServiceTest {
     private UserMapper userMapper;
     @InjectMocks
     private UserService userService;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @Test
     void findByLogin_found_returnsUserResponse() {
@@ -192,9 +195,10 @@ class UserServiceTest {
     @Test
     void delete_userExists_setsActiveToFalseAndReturnsTrue() {
         UserModel user = aUser();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        String loginDelUsuario = user.getLogin();
 
-        boolean result = userService.delete(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        boolean result = userService.delete(USER_ID, loginDelUsuario);
 
         assertThat(result).isTrue();
         ArgumentCaptor<UserModel> captor = ArgumentCaptor.forClass(UserModel.class);
@@ -207,7 +211,7 @@ class UserServiceTest {
     void delete_userNotFound_throwsUserNotFoundException() {
         when(userRepository.findById("unknown")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.delete("unknown"))
+        assertThatThrownBy(() -> userService.delete("unknown", "User_Login"))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("User not found.");
         verify(userRepository, never()).save(any());

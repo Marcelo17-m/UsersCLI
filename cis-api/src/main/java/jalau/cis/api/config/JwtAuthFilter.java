@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jalau.cis.api.exception.UserNotFoundException;
 import jalau.cis.api.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Autowired
+    @Lazy
     private UserService userService;
     @Autowired
     private SecurityErrorResponseWriter securityErrorResponseWriter;
