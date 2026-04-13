@@ -45,26 +45,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex,
+    public ResponseEntity<ErrorResponseDto> handleValidationErrors(MethodArgumentNotValidException ex,
                                                                       HttpServletRequest request) {
-        List<Map<String, String>> fieldErrors = ex.getBindingResult()
-                .getFieldErrors()
+        String fieldErrors = ex.getBindingResult().getFieldErrors()
                 .stream()
-                .map((FieldError fe) -> Map.of(
-                        "field", fe.getField(),
-                        "message", fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Invalid value"
-                ))
-                .collect(Collectors.toList());
+                .map(fe -> fe.getField() + ": " + (fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Invalid value"))
+                .collect(Collectors.joining(", "));
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "code", "USR-400",
-                        "message", "Validation failed",
-                        "timestamp", Instant.now().toString(),
-                        "path", request.getRequestURI(),
-                        "errors", fieldErrors
-                ));
+        return buildError(HttpStatus.BAD_REQUEST, "USR-400",
+                "Validation failed - " + fieldErrors, request.getRequestURI());
+
     }
 
     private ResponseEntity<ErrorResponseDto> buildError(HttpStatus status, String code, String message, String path) {

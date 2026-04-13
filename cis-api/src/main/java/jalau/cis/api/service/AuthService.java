@@ -10,6 +10,7 @@ import jalau.cis.api.model.UserModel;
 import jalau.cis.api.repository.UserRepository;
 import jalau.cis.api.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
@@ -20,11 +21,13 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil,  PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AuthResponseDto login(AuthRequestDto request) {
@@ -35,15 +38,7 @@ public class AuthService {
             throw new InactiveUserException("Inactive User");
         }
 
-        String plainPassword;
-        try {
-            byte[] decodedBytes = Base64.getDecoder().decode(request.getPassword());
-            plainPassword = new String(decodedBytes);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidCredentialsException("Invalid Credentials");
-        }
-
-        if (!plainPassword.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Invalid Credentials");
         }
 
@@ -56,19 +51,11 @@ public class AuthService {
             throw new DuplicateLoginException("User with same Login already exists.");
         }
 
-        String plainPassword;
-        try {
-            byte[] decodedBytes = Base64.getDecoder().decode(request.getPassword());
-            plainPassword = new String(decodedBytes);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid format. Password must be Base64.");
-        }
-
         UserModel user = new UserModel();
         user.setId(UUID.randomUUID().toString());
         user.setName(request.getName());
         user.setLogin(request.getLogin());
-        user.setPassword(plainPassword);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setActive(true);
         userRepository.save(user);
     }

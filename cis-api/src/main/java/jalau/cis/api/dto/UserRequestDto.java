@@ -17,9 +17,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "User request payload")
 public class UserRequestDto {
 
-    @Schema(description = "User unique identifier", example = "test-id-001")
-    private String id;
-
     @Size(max = 200)
     @Schema(description = "User full name", example = "John Doe")
     private String name;
@@ -32,7 +29,4 @@ public class UserRequestDto {
     @Size(max = 100)
     @Schema(description = "User password encoded in Base64", example = "cGFzc3dvcmQxMjM=")
     private String password;
-
-    @Schema(description = "User status", example = "true")
-    private Boolean active;
 }
