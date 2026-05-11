@@ -2,18 +2,50 @@
 .idea/
 *.iml
 out/
+gen/
 
-# Maven output
+# VS Code
+.vscode/
+
+# Log and Temp files
+**/*.log
+**/*.txt
+logs/
 target/
 pom.xml~
+dependency-reduced-pom.xml
+settings.local.json
 
-# Log files
-*.log
-logs/
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Git specific files
-.git/
+# (Not needed as .git is ignored by git itself)
+
+# .NET / ASP.NET Core
+**/bin/
+**/obj/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+TestResults/
+runner/
+temp/
+
+# Binary files
+*.exe
+*.dll
+*.pdb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Database temp files
+db/*.db-journal
+db/*.db-shm
+db/*.db-wal

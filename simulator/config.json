@@ -1,0 +1,94 @@
+{
+  "_comment": "CIS Traffic Simulator config. Adjust endpoints, body fields and types as the real APIs evolve.",
+  "simulation": {
+    "concurrentUsers": 5,
+    "ideasPerUser": 3,
+    "votesPerUser": 2,
+    "delayBetweenRequestsMs": 100
+  },
+  "apis": {
+    "usersApi": "http://localhost:8081/api/v1",
+    "cisApi": "http://localhost:5281/api/v1"
+  },
+  "endpoints": {
+    "register": {
+      "description": "Create a simulated user in the Java Users API",
+      "api": "usersApi",
+      "method": "POST",
+      "path": "/users",
+      "body": {
+        "name": { "type": "name" },
+        "login": { "type": "context", "key": "login" },
+        "password": { "type": "context", "key": "password" }
+      },
+      "expectId": "id"
+    },
+    "login": {
+      "description": "Authenticate and obtain a JWT. Response must contain a 'token' field.",
+      "api": "usersApi",
+      "method": "POST",
+      "path": "/auth/login",
+      "body": {
+        "login": { "type": "context", "key": "login" },
+        "password": { "type": "context", "key": "rawPassword" }
+      },
+      "expectToken": "token"
+    },
+    "createTopic": {
+      "description": "Create a topic in the .NET CIS API (requires Bearer token)",
+      "api": "cisApi",
+      "method": "POST",
+      "path": "/topics",
+      "requiresAuth": true,
+      "body": {
+        "title": { "type": "sentence", "prefix": "Topic" },
+        "description": { "type": "sentence", "prefix": "About" },
+        "userId": { "type": "context", "key": "userId" }
+      },
+      "expectId": "id"
+    },
+    "createIdea": {
+      "description": "Post an idea under a topic in the .NET CIS API (requires Bearer token)",
+      "api": "cisApi",
+      "method": "POST",
+      "path": "/ideas",
+      "requiresAuth": true,
+      "body": {
+        "content": { "type": "sentence", "prefix": "Idea" },
+        "topicId": { "type": "context", "key": "topicId" },
+        "userId": { "type": "context", "key": "userId" }
+      },
+      "expectId": "id"
+    },
+    "castVote": {
+      "description": "Vote on an idea in the .NET CIS API (requires Bearer token)",
+      "api": "cisApi",
+      "method": "POST",
+      "path": "/votes",
+      "requiresAuth": true,
+      "body": {
+        "ideaId": { "type": "context", "key": "ideaId" },
+        "userId": { "type": "context", "key": "userId" }
+      },
+      "expectId": "id"
+    },
+    "deleteVote": {
+      "description": "Remove a vote (unvote) in the .NET CIS API (requires Bearer token)",
+      "api": "cisApi",
+      "method": "DELETE",
+      "path": "/votes/{voteId}",
+      "requiresAuth": true,
+      "pathParams": {
+        "voteId": { "type": "context", "key": "voteId" }
+      }
+    }
+  },
+  "_types": {
+    "name": "Random display name -> SimUser_xxxxxxxx",
+    "username": "Random login handle -> sim_xxxxxxxx",
+    "base64password": "Base64-encoded random password",
+    "sentence": "Short random phrase with optional prefix",
+    "uuid": "Random UUID v4",
+    "context": "Value previously stored in the user context under 'key'"
+  }
+}
